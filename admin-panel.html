@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin Panel - VetConnect</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" style="background: linear-gradient(135deg, var(--brand-green) 0%, #1a3a33 100%);">
+            <div class="logo">
+                <div class="logo-icon">
+                    <img src="assets/logo.jpg" alt="VetConnect"
+                        style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px;">
+                </div>
+                <div class="logo-text">VetConnect Admin</div>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-view="overview" onclick="loadView('overview')">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Vista General</span>
+                </a>
+                <a href="#" class="nav-item" data-view="clinics" onclick="loadView('clinics')">
+                    <span class="nav-icon">🏥</span>
+                    <span class="nav-text">Clínicas</span>
+                </a>
+                <a href="#" class="nav-item" data-view="users" onclick="loadView('users')">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">Usuarios</span>
+                </a>
+                <a href="#" class="nav-item" data-view="subscriptions" onclick="loadView('subscriptions')">
+                    <span class="nav-icon">💳</span>
+                    <span class="nav-text">Suscripciones</span>
+                </a>
+                <a href="#" class="nav-item" data-view="analytics" onclick="loadView('analytics')">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">Analytics</span>
+                </a>
+                <a href="#" class="nav-item" data-view="support" onclick="loadView('support')">
+                    <span class="nav-icon">🛟</span>
+                    <span class="nav-text">Soporte</span>
+                </a>
+                <a href="#" class="nav-item" data-view="settings" onclick="loadView('settings')">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">Configuración</span>
+                </a>
+
+                <div style="margin-top: auto; padding-top: 2rem;">
+                    <a href="index.html" class="nav-item">
+                        <span class="nav-icon">🏥</span>
+                        <span class="nav-text">Vista Cliente</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div>
+                        <h2 id="viewTitle">Panel de Super Administrador</h2>
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Gestión completa de la plataforma
+                            VetConnect</p>
+                    </div>
+                    <div id="userHeader"></div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="content" id="mainContent">
+                <div id="viewContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer"></div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+    <script src="backend/utils/auth-manager.js"></script>
+    <script src="backend/utils/license-manager.js"></script>
+    <script>
+        // Protect this page - require super_admin role
+        window.addEventListener('DOMContentLoaded', async () => {
+            await AuthManager.init();
+
+            if (!AuthManager.hasRole('super_admin')) {
+                alert('Acceso denegado. Solo Super Administradores pueden acceder.');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Load user header
+            document.getElementById('userHeader').innerHTML = AuthManager.getUserHeaderHTML();
+
+            // Load initial view
+            loadView('overview');
+        });
+
+        function loadView(view) {
+            // Update active menu item
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-view="${view}"]`).classList.add('active');
+
+            // Load view content
+            const content = document.getElementById('viewContent');
+
+            switch (view) {
+                case 'overview':
+                    content.innerHTML = renderOverview();
+                    break;
+                case 'clinics':
+                    content.innerHTML = renderClinics();
+                    break;
+                case 'users':
+                    content.innerHTML = renderUsers();
+                    break;
+                case 'subscriptions':
+                    content.innerHTML = renderSubscriptions();
+                    break;
+                case 'analytics':
+                    content.innerHTML = renderAnalytics();
+                    break;
+                case 'support':
+                    content.innerHTML = renderSupport();
+                    break;
+                case 'settings':
+                    content.innerHTML = renderSettings();
+                    break;
+            }
+        }
+
+        function renderOverview() {
+            return `
+                <div class="stats-grid mb-lg">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Total Clínicas</div>
+                                <div class="stat-value">47</div>
+                                <span class="stat-change positive">+5 este mes</span>
+                            </div>
+                            <div class="stat-icon">🏥</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">MRR (Ingresos Mensuales)</div>
+                                <div class="stat-value">$3,713</div>
+                                <span class="stat-change positive">+23%</span>
+                            </div>
+                            <div class="stat-icon">💰</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Usuarios Activos</div>
+                                <div class="stat-value">234</div>
+                                <span class="stat-change positive">+12%</span>
+                            </div>
+                            <div class="stat-icon">👥</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-label">Tasa de Conversión</div>
+                                <div class="stat-value">8.5%</div>
+                                <span class="stat-change positive">+1.2%</span>
+                            </div>
+                            <div class="stat-icon">📈</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 mb-lg">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Nuevas Clínicas (Última Semana)</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Clínica</th>
+                                            <th>Plan</th>
+                                            <th>Fecha</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Clínica Veterinaria Central</td>
+                                            <td><span class="badge badge-success">Premium</span></td>
+                                            <td>05 Dic 2025</td>
+                                        </tr>
+                                        <tr>
+                                            <td>PetCare Norte</td>
+                                            <td><span class="badge badge-success">Premium</span></td>
+                                            <td>04 Dic 2025</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Hospital Veterinario del Sur</td>
+                                            <td><span class="badge badge-warning">Free</span></td>
+                                            <td>03 Dic 2025</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Métricas de Plataforma</h3>
+                        </div>
+                        <div class="card-body">
+                            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span>Uptime (30 días)</span>
+                                        <strong>99.8%</strong>
+                                    </div>
+                                    <div style="height: 8px; background: var(--bg-glass); border-radius: 4px; overflow: hidden;">
+                                        <div style="width: 99.8%; height: 100%; background: var(--success-gradient);"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span>Conversión Trial → Premium</span>
+                                        <strong>8.5%</strong>
+                                    </div>
+                                    <div style="height: 8px; background: var(--bg-glass); border-radius: 4px; overflow: hidden;">
+                                        <div style="width: 85%; height: 100%; background: var(--primary-gradient);"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span>Retención de Clientes</span>
+                                        <strong>94%</strong>
+                                    </div>
+                                    <div style="height: 8px; background: var(--bg-glass); border-radius: 4px; overflow: hidden;">
+                                        <div style="width: 94%; height: 100%; background: var(--secondary-gradient);"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span>NPS (Net Promoter Score)</span>
+                                        <strong>72</strong>
+                                    </div>
+                                    <div style="height: 8px; background: var(--bg-glass); border-radius: 4px; overflow: hidden;">
+                                        <div style="width: 72%; height: 100%; background: var(--success-gradient);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Acciones Rápidas</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid grid-4">
+                            <button class="btn btn-primary" style="padding: 1rem;" onclick="alert('Función en desarrollo')">
+                                ➕ Nueva Clínica
+                            </button>
+                            <button class="btn btn-secondary" style="padding: 1rem;" onclick="alert('Función en desarrollo')">
+                                💬 Enviar Anuncio
+                            </button>
+                            <button class="btn btn-secondary" style="padding: 1rem;" onclick="alert('Función en desarrollo')">
+                                📊 Generar Reporte
+                            </button>
+                            <button class="btn btn-secondary" style="padding: 1rem;" onclick="alert('Función en desarrollo')">
+                                🔧 Configurar Sistema
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderClinics() {
+            return `<div class="card"><div class="card-header"><h3>Gestión de Clínicas</h3></div><div class="card-body"><p>Módulo en desarrollo...</p></div></div>`;
+        }
+
+        function renderUsers() {
+            return `<div class="card"><div class="card-header"><h3>Gestión de Usuarios</h3></div><div class="card-body"><p>Módulo en desarrollo...</p></div></div>`;
+        }
+
+        function renderSubscriptions() {
+            return `<div class="card"><div class="card-header"><h3>Gestión de Suscripciones</h3></div><div class="card-body"><p>Módulo en desarrollo...</p></div></div>`;
+        }
+
+        function renderAnalytics() {
+            return `<div class="card"><div class="card-header"><h3>Analytics Avanzado</h3></div><div class="card-body"><p>Módulo en desarrollo... </p></div></div>`;
+        }
+
+        function renderSupport() {
+            return `<div class="card"><div class="card-header"><h3>Tickets de Soporte</h3></div><div class="card-body"><p>Módulo en desarrollo...</p></div></div>`;
+        }
+
+        function renderSettings() {
+            return `<div class="card"><div class="card-header"><h3>Configuración de Sistema</h3></div><div class="card-body"><p>Módulo en desarrollo...</p></div></div>`;
+        }
+    </script>
+</body>
+
+</html>

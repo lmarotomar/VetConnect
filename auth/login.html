@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión | BioVetAI</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0a0f1a 0%, #1a1f2e 50%, #0d1117 100%);
+            padding: 2rem;
+        }
+
+        .auth-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 3rem;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-logo .icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-logo h1 {
+            font-size: 1.75rem;
+            color: var(--brand-green);
+            margin: 0;
+        }
+
+        .auth-logo p {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .auth-form .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .auth-form .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .auth-form .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .auth-form .form-input:focus {
+            outline: none;
+            border-color: var(--brand-green);
+            box-shadow: 0 0 0 3px rgba(64, 224, 208, 0.1);
+        }
+
+        .auth-form .btn-primary {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: var(--text-muted);
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-glass);
+        }
+
+        .auth-divider span {
+            padding: 0 1rem;
+            font-size: 0.875rem;
+        }
+
+        .auth-links {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--text-muted);
+        }
+
+        .auth-links a {
+            color: var(--brand-green);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: -0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .forgot-password a {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            text-decoration: none;
+        }
+
+        .forgot-password a:hover {
+            color: var(--brand-green);
+        }
+
+        .error-message {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .success-message {
+            background: rgba(64, 224, 208, 0.1);
+            border: 1px solid var(--brand-green);
+            color: var(--brand-green);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <div class="icon">🐾</div>
+                <h1>BioVetAI</h1>
+                <p>Sistema de Gestión Veterinaria</p>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+
+            <form class="auth-form" id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">Correo Electrónico</label>
+                    <input type="email" class="form-input" id="email" placeholder="tu@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Contraseña</label>
+                    <input type="password" class="form-input" id="password" placeholder="••••••••" required>
+                </div>
+
+                <div class="forgot-password">
+                    <a href="#" onclick="showResetPassword()">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="loginBtn">
+                    Iniciar Sesión
+                </button>
+            </form>
+
+            <div class="auth-links">
+                ¿No tienes cuenta? <a href="register.html">Regístrate aquí</a>
+            </div>
+
+            <div class="auth-divider">
+                <span>Demo</span>
+            </div>
+
+            <div style="text-align: center;">
+                <button class="btn btn-secondary" onclick="demoLogin()" style="width: 100%;">
+                    🎮 Acceso Demo (Sin registro)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="supabase-client.js"></script>
+    <script>
+        // Initialize Supabase
+        const supabaseClient = window.supabase.createClient(
+            'https://dppxgwjvfiqbgjupxipf.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwcHhnd2p2ZmlxYmdqdXB4aXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4ODE4MDksImV4cCI6MjA4MjQ1NzgwOX0.zBDqyWejXCkqeQ-9FqRIHg2QEeppwAgTGymZ_m3DLEc'
+        );
+
+        // Check if already logged in
+        async function checkSession() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                // Already logged in, redirect to dashboard
+                window.location.href = '../index.html';
+            }
+        }
+        checkSession();
+
+        // Handle login form submission
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const form = document.getElementById('loginForm');
+
+            // Show loading state
+            loginBtn.innerHTML = '<span class="spinner"></span>Iniciando sesión...';
+            form.classList.add('loading');
+            hideMessages();
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (error) throw error;
+
+                // Success - redirect to dashboard
+                showSuccess('¡Bienvenido! Redirigiendo...');
+
+                setTimeout(() => {
+                    const returnUrl = sessionStorage.getItem('returnUrl') || '../index.html';
+                    sessionStorage.removeItem('returnUrl');
+                    window.location.href = returnUrl;
+                }, 1000);
+
+            } catch (error) {
+                showError(getErrorMessage(error));
+                loginBtn.innerHTML = 'Iniciar Sesión';
+                form.classList.remove('loading');
+            }
+        }
+
+        // Demo login (bypasses auth for demonstration)
+        function demoLogin() {
+            // Set demo mode in localStorage
+            localStorage.setItem('biovetai_demo_mode', 'true');
+            localStorage.setItem('biovetai_demo_user', JSON.stringify({
+                name: 'Usuario Demo',
+                email: 'demo@biovetai.org',
+                role: 'clinic_admin'
+            }));
+
+            showSuccess('Accediendo en modo demo...');
+
+            setTimeout(() => {
+                window.location.href = '../index.html';
+            }, 1000);
+        }
+
+        // Show reset password form
+        function showResetPassword() {
+            const email = document.getElementById('email').value;
+
+            if (!email) {
+                showError('Ingresa tu correo electrónico primero');
+                return;
+            }
+
+            // TODO: Implement password reset
+            showSuccess('Si el correo existe, recibirás instrucciones para restablecer tu contraseña.');
+        }
+
+        // Helper functions
+        function showError(message) {
+            const el = document.getElementById('errorMessage');
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+
+        function showSuccess(message) {
+            const el = document.getElementById('successMessage');
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+
+        function hideMessages() {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        function getErrorMessage(error) {
+            const messages = {
+                'Invalid login credentials': 'Credenciales inválidas. Verifica tu email y contraseña.',
+                'Email not confirmed': 'Por favor confirma tu email antes de iniciar sesión.',
+                'User not found': 'No existe una cuenta con este email.',
+                'Too many requests': 'Demasiados intentos. Espera unos minutos.'
+            };
+            return messages[error.message] || error.message || 'Error al iniciar sesión';
+        }
+    </script>
+</body>
+
+</html>

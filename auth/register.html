@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Cuenta | BioVetAI</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0a0f1a 0%, #1a1f2e 50%, #0d1117 100%);
+            padding: 2rem;
+        }
+
+        .auth-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 3rem;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-logo .icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-logo h1 {
+            font-size: 1.75rem;
+            color: var(--brand-green);
+            margin: 0;
+        }
+
+        .auth-logo p {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .auth-form .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .auth-form .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .auth-form .form-input,
+        .auth-form .form-select {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .auth-form .form-input:focus,
+        .auth-form .form-select:focus {
+            outline: none;
+            border-color: var(--brand-green);
+            box-shadow: 0 0 0 3px rgba(64, 224, 208, 0.1);
+        }
+
+        .auth-form .btn-primary {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .auth-links {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--text-muted);
+        }
+
+        .auth-links a {
+            color: var(--brand-green);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .success-message {
+            background: rgba(64, 224, 208, 0.1);
+            border: 1px solid var(--brand-green);
+            color: var(--brand-green);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 480px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .password-requirements {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <div class="icon">🐾</div>
+                <h1>BioVetAI</h1>
+                <p>Crea tu cuenta de administrador</p>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+
+            <form class="auth-form" id="registerForm" onsubmit="handleRegister(event)">
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-input" id="firstName" placeholder="Tu nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Apellido</label>
+                        <input type="text" class="form-input" id="lastName" placeholder="Tu apellido" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Correo Electrónico</label>
+                    <input type="email" class="form-input" id="email" placeholder="tu@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Nombre de la Clínica/Hospital</label>
+                    <input type="text" class="form-input" id="clinicName"
+                        placeholder="Ej: Clínica Veterinaria El Amigo Fiel" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Tipo de Organización</label>
+                    <select class="form-select" id="orgType" required>
+                        <option value="individual">Veterinario Individual</option>
+                        <option value="clinic" selected>Clínica Veterinaria</option>
+                        <option value="hospital">Hospital Veterinario</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Contraseña</label>
+                    <input type="password" class="form-input" id="password" placeholder="••••••••" required
+                        minlength="8">
+                    <div class="password-requirements">Mínimo 8 caracteres</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Confirmar Contraseña</label>
+                    <input type="password" class="form-input" id="confirmPassword" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="registerBtn">
+                    Crear Cuenta
+                </button>
+            </form>
+
+            <div class="auth-links">
+                ¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const supabaseClient = window.supabase.createClient(
+            'https://dppxgwjvfiqbgjupxipf.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwcHhnd2p2ZmlxYmdqdXB4aXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4ODE4MDksImV4cCI6MjA4MjQ1NzgwOX0.zBDqyWejXCkqeQ-9FqRIHg2QEeppwAgTGymZ_m3DLEc'
+        );
+
+        // Handle registration
+        async function handleRegister(event) {
+            event.preventDefault();
+
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('email').value;
+            const clinicName = document.getElementById('clinicName').value;
+            const orgType = document.getElementById('orgType').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            const registerBtn = document.getElementById('registerBtn');
+            const form = document.getElementById('registerForm');
+
+            hideMessages();
+
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                showError('Las contraseñas no coinciden');
+                return;
+            }
+
+            // Show loading state
+            registerBtn.innerHTML = '<span class="spinner"></span>Creando cuenta...';
+            form.classList.add('loading');
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            first_name: firstName,
+                            last_name: lastName,
+                            full_name: `${firstName} ${lastName}`,
+                            clinic_name: clinicName,
+                            org_type: orgType,
+                            role: 'clinic_admin'
+                        }
+                    }
+                });
+
+                if (error) throw error;
+
+                // Success
+                showSuccess('¡Cuenta creada! Revisa tu email para confirmar tu cuenta.');
+                form.reset();
+
+                // If email confirmation is disabled, redirect
+                if (data.session) {
+                    setTimeout(() => {
+                        window.location.href = '../index.html';
+                    }, 2000);
+                }
+
+            } catch (error) {
+                showError(getErrorMessage(error));
+            } finally {
+                registerBtn.innerHTML = 'Crear Cuenta';
+                form.classList.remove('loading');
+            }
+        }
+
+        // Helper functions
+        function showError(message) {
+            const el = document.getElementById('errorMessage');
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+
+        function showSuccess(message) {
+            const el = document.getElementById('successMessage');
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+
+        function hideMessages() {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        function getErrorMessage(error) {
+            const messages = {
+                'User already registered': 'Ya existe una cuenta con este email.',
+                'Password should be at least 6 characters': 'La contraseña debe tener al menos 6 caracteres.',
+                'Unable to validate email address': 'Email inválido.'
+            };
+            return messages[error.message] || error.message || 'Error al crear la cuenta';
+        }
+    </script>
+</body>
+
+</html>
