@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VetConnect - Planes y Precios</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .pricing-hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: radial-gradient(circle at 50% 0%, rgba(102, 126, 234, 0.2) 0%, transparent 70%);
+        }
+
+        .pricing-hero h1 {
+            font-size: 3rem;
+            font-family: var(--font-heading);
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        .pricing-toggle {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+            margin: 2rem 0;
+        }
+
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+        }
+
+        .pricing-card {
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--border-glass);
+            border-radius: var(--radius-xl);
+            padding: 2.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent-purple);
+            box-shadow: 0 12px 48px rgba(102, 126, 234, 0.3);
+        }
+
+        .pricing-card.featured {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 2px solid var(--accent-purple);
+            transform: scale(1.05);
+        }
+
+        .pricing-badge {
+            position: absolute;
+            top: -15px;
+            right: 20px;
+            background: var(--primary-gradient);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .pricing-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .plan-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-price {
+            font-size: 3.5rem;
+            font-weight: 700;
+            font-family: var(--font-heading);
+            color: var(--text-primary);
+            line-height: 1;
+            margin: 1rem 0;
+        }
+
+        .plan-price small {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .plan-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 2rem 0;
+        }
+
+        .feature-list li {
+            padding: 0.75rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .feature-list li::before {
+            content: '✓';
+            color: var(--accent-teal);
+            font-weight: 700;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .feature-list li.disabled {
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        .feature-list li.disabled::before {
+            content: '✕';
+            color: var(--text-muted);
+        }
+
+        .cta-button {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .cta-button.primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .cta-button.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .cta-button.secondary {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-glass);
+            color: var(--text-primary);
+        }
+
+        .comparison-section {
+            max-width: 1200px;
+            margin: 5rem auto;
+            padding: 0 2rem;
+        }
+
+        .faq-section {
+            max-width: 800px;
+            margin: 5rem auto;
+            padding: 0 2rem;
+        }
+
+        .faq-item {
+            background: var(--bg-glass);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .faq-question {
+            font-weight: 600;
+            font-size: 1.125rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .faq-answer {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="min-height: 100vh; background: var(--bg-primary);">
+        <!-- Back to App Button -->
+        <div style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 1000;">
+            <a href="index.html" class="btn btn-primary"
+                style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.75rem 1.5rem; box-shadow: var(--shadow-lg);">
+                <span>←</span>
+                <span>Volver a la App</span>
+            </a>
+        </div>
+
+        <!-- Hero Section -->
+        <section class="pricing-hero">
+            <h1>Elige el Plan Perfecto para tu Clínica</h1>
+            <p style="font-size: 1.25rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto;">
+                Comienza gratis o desbloquea todo el poder de la automatización
+            </p>
+
+            <div class="pricing-toggle">
+                <span>Mensual</span>
+                <label style="position: relative; display: inline-block; width: 60px; height: 30px;">
+                    <input type="checkbox" id="billingToggle" style="opacity: 0; width: 0; height: 0;">
+                    <span
+                        style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-glass); border-radius: 30px; transition: 0.3s;"></span>
+                </label>
+                <span>Anual <span class="badge badge-success">Ahorra 17%</span></span>
+            </div>
+        </section>
+
+        <!-- Pricing Cards -->
+        <div class="pricing-cards">
+            <!-- FREE Plan -->
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <div style="font-size: 3rem; margin-bottom: 1rem; color: var(--brand-gold);">FREE</div>
+                    <div class="plan-name">VetConnect Free</div>
+                    <div class="plan-price">
+                        $0
+                        <small>/mes</small>
+                    </div>
+                    <div class="plan-description">
+                        Perfecto para empezar a organizar tu clínica
+                    </div>
+                </div>
+
+                <ul class="feature-list">
+                    <li>Hasta 50 citas por mes</li>
+                    <li>Hasta 25 clientes</li>
+                    <li>1 usuario/veterinario</li>
+                    <li>Dashboard básico</li>
+                    <li>Gestión de citas manual</li>
+                    <li>Historias clínicas básicas</li>
+                    <li class="disabled">Automatizaciones</li>
+                    <li class="disabled">Integraciones (WhatsApp, CRM)</li>
+                    <li class="disabled">Reportes avanzados</li>
+                    <li class="disabled">Soporte prioritario</li>
+                </ul>
+
+                <button class="cta-button secondary" onclick="window.location.href='../index.html'">
+                    Comenzar Gratis
+                </button>
+                <p style="text-align: center; font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem;">
+                    Sin tarjeta de crédito
+                </p>
+            </div>
+
+            <!-- PREMIUM Plan -->
+            <div class="pricing-card featured">
+                <div class="pricing-badge">🔥 Más Popular</div>
+
+                <div class="pricing-header">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">💎</div>
+                    <div class="plan-name">VetConnect Premium</div>
+                    <div class="plan-price">
+                        $79
+                        <small>/mes</small>
+                    </div>
+                    <div class="plan-description">
+                        Automatización completa para clínicas profesionales
+                    </div>
+                </div>
+
+                <ul class="feature-list">
+                    <li><strong>Todo de FREE, más:</strong></li>
+                    <li>✨ Citas ilimitadas</li>
+                    <li>✨ Clientes ilimitados</li>
+                    <li>✨ Usuarios ilimitados</li>
+                    <li><strong>🤖 Automatizaciones completas:</strong></li>
+                    <li>• Confirmaciones automáticas</li>
+                    <li>• Recordatorios (24h y 2h)</li>
+                    <li>• Triage automático</li>
+                    <li>• Seguimientos programados</li>
+                    <li><strong>🔗 Todas las integraciones:</strong></li>
+                    <li>• WhatsApp Business API</li>
+                    <li>• Twilio SMS</li>
+                    <li>• SendGrid Email</li>
+                    <li>• HubSpot CRM</li>
+                    <li>• Google Calendar & Sheets</li>
+                    <li>📊 Reportes avanzados</li>
+                    <li>📄 Exportación PDF y Excel</li>
+                    <li>☁️ Backup automático en la nube</li>
+                    <li>🛟 Soporte prioritario 24/7</li>
+                </ul>
+
+                <button class="cta-button primary" onclick="alert('Redirigiendo a Stripe Checkout...')">
+                    🎁 Probar Gratis 14 Días
+                </button>
+                <p style="text-align: center; font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem;">
+                    Luego $79/mes. Cancela cuando quieras.
+                </p>
+            </div>
+
+            <!-- ENTERPRISE Plan -->
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🏢</div>
+                    <div class="plan-name">Enterprise</div>
+                    <div class="plan-price">
+                        Personalizado
+                    </div>
+                    <div class="plan-description">
+                        Para redes de clínicas y organizaciones grandes
+                    </div>
+                </div>
+
+                <ul class="feature-list">
+                    <li><strong>Todo de PREMIUM, más:</strong></li>
+                    <li>🏥 Múltiples clínicas</li>
+                    <li>🔧 API personalizada</li>
+                    <li>🎨 Branding personalizado</li>
+                    <li>🔐 SSO y seguridad avanzada</li>
+                    <li>📞 Account manager dedicado</li>
+                    <li>🎓 Onboarding personalizado</li>
+                    <li>📊 Reportes custom</li>
+                    <li>⚡ SLA garantizado</li>
+                    <li>🔗 Integraciones a medida</li>
+                </ul>
+
+                <button class="cta-button secondary" onclick="alert('Contactar ventas...')">
+                    Contactar Ventas
+                </button>
+            </div>
+        </div>
+
+        <!-- Comparison Table -->
+        <section class="comparison-section">
+            <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 3rem; font-family: var(--font-heading);">
+                Comparación Detallada
+            </h2>
+
+            <div class="card">
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Característica</th>
+                                <th style="text-align: center;">Free</th>
+                                <th style="text-align: center;">Premium</th>
+                                <th style="text-align: center;">Enterprise</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Citas por mes</strong></td>
+                                <td style="text-align: center;">50</td>
+                                <td style="text-align: center;">Ilimitadas</td>
+                                <td style="text-align: center;">Ilimitadas</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Clientes</strong></td>
+                                <td style="text-align: center;">25</td>
+                                <td style="text-align: center;">Ilimitados</td>
+                                <td style="text-align: center;">Ilimitados</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Usuarios</strong></td>
+                                <td style="text-align: center;">1</td>
+                                <td style="text-align: center;">Ilimitados</td>
+                                <td style="text-align: center;">Ilimitados</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Automatizaciones</strong></td>
+                                <td style="text-align: center;">✕</td>
+                                <td style="text-align: center;">✓</td>
+                                <td style="text-align: center;">✓</td>
+                            </tr>
+                            <tr>
+                                <td><strong>WhatsApp/SMS</strong></td>
+                                <td style="text-align: center;">✕</td>
+                                <td style="text-align: center;">✓</td>
+                                <td style="text-align: center;">✓</td>
+                            </tr>
+                            <tr>
+                                <td><strong>HubSpot CRM</strong></td>
+                                <td style="text-align: center;">✕</td>
+                                <td style="text-align: center;">✓</td>
+                                <td style="text-align: center;">✓</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Reportes Avanzados</strong></td>
+                                <td style="text-align: center;">✕</td>
+                                <td style="text-align: center;">✓</td>
+                                <td style="text-align: center;">✓</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Múltiples clínicas</strong></td>
+                                <td style="text-align: center;">✕</td>
+                                <td style="text-align: center;">✕</td>
+                                <td style="text-align: center;">✓</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Soporte</strong></td>
+                                <td style="text-align: center;">Email</td>
+                                <td style="text-align: center;">24/7 Prioritario</td>
+                                <td style="text-align: center;">Dedicado</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="faq-section">
+            <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 3rem; font-family: var(--font-heading);">
+                Preguntas Frecuentes
+            </h2>
+
+            <div class="faq-item">
+                <div class="faq-question">¿Puedo cambiar de plan en cualquier momento?</div>
+                <div class="faq-answer">
+                    Sí, puedes actualizar o degradar tu plan en cualquier momento. Los cambios se aplican
+                    inmediatamente.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">¿Qué incluye el trial de 14 días?</div>
+                <div class="faq-answer">
+                    Acceso completo a todas las características Premium sin restricciones. No se requiere tarjeta de
+                    crédito.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">¿Qué pasa con mis datos si cancelo?</div>
+                <div class="faq-answer">
+                    Puedes exportar todos tus datos antes de cancelar. Los datos se conservan por 30 días después de la
+                    cancelación.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">¿Los precios incluyen las integraciones externas?</div>
+                <div class="faq-answer">
+                    VetConnect Premium incluye la funcionalidad de integración. Los costos de servicios externos
+                    (WhatsApp
+                    Business API, Twilio, etc.) se facturan directamente por esos proveedores según su uso.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">¿Ofrecen descuentos para múltiples clínicas?</div>
+                <div class="faq-answer">
+                    Sí, nuestro plan Enterprise ofrece precios personalizados para redes de clínicas. Contáctanos para
+                    una cotización.
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section style="text-align: center; padding: 5rem 2rem; background: var(--bg-secondary); margin-top: 5rem;">
+            <h2 style="font-size: 2.5rem; margin-bottom: 1rem; font-family: var(--font-heading);">
+                ¿Listo para automatizar tu clínica?
+            </h2>
+            <p style="font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 2rem;">
+                Únete a cientos de veterinarios que ahorran 15+ horas semanales con VetConnect
+            </p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <button class="btn btn-primary" style="font-size: 1.125rem; padding: 1rem 2rem;"
+                    onclick="alert('Iniciando trial...')">
+                    🎁 Probar Gratis 14 Días
+                </button>
+                <button class="btn btn-secondary" style="font-size: 1.125rem; padding: 1rem 2rem;"
+                    onclick="window.location.href='../index.html'">
+                    Ver Demo
+                </button>
+            </div>
+        </section>
+    </div>
+</body>
+
+</html>

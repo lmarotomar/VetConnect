@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VetConnect - Sistema Integral de Automatización Veterinaria</title>
+    <meta name="description" content="Sistema completo de gestión y automatización para clínicas veterinarias">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <img src="assets/logo.jpg" alt="VetConnect"
+                        style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px;">
+                </div>
+                <div class="logo-text">VetConnect</div>
+            </div>
+
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-view="dashboard">
+                            <span class="nav-icon">📊</span>
+                            <span data-i18n="nav.dashboard">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-view="appointments">
+                            <span class="nav-icon">📅</span>
+                            <span data-i18n="nav.appointments">Citas</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-view="clinical-records">
+                            <span class="nav-icon">📋</span>
+                            <span data-i18n="nav.clinical_records">Historias Clínicas</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-view="communication">
+                            <span class="nav-icon">💬</span>
+                            <span data-i18n="nav.communication">Comunicación</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-view="education">
+                            <span class="nav-icon">📚</span>
+                            <span data-i18n="nav.education">Educación</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-view="billing">
+                            <span class="nav-icon">💰</span>
+                            <span data-i18n="nav.billing">Facturación</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-view="inventory">
+                            <span class="nav-icon">📦</span>
+                            <span data-i18n="nav.inventory">Inventario</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-view="reports">
+                            <span class="nav-icon">📈</span>
+                            <span data-i18n="nav.reports">Reportes</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a class="nav-link" data-view="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span data-i18n="nav.settings">Configuración</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content" id="mainContent">
+            <header class="header">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+                <h1 class="header-title" id="pageTitle">Dashboard</h1>
+                <div class="header-actions">
+                    <button class="btn btn-primary" id="newAppointmentBtn">
+                        ➕ <span data-i18n="header.new_appointment">Nueva Cita</span>
+                    </button>
+
+                    <!-- Language Toggle -->
+                    <button class="btn btn-secondary" id="languageToggle" onclick="toggleLanguage()"
+                        style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;"
+                        title="Change Language">
+                        <span style="font-size: 1.25rem;">🌐</span>
+                        <span id="currentLangDisplay">ES</span>
+                    </button>
+
+                    <!-- User Profile Menu -->
+                    <div style="position: relative;">
+                        <button class="btn btn-secondary" id="userMenuBtn"
+                            style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div
+                                style="width: 32px; height: 32px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: 700;">
+                                U
+                            </div>
+                            <span id="userNameDisplay">Usuario</span>
+                            <span style="font-size: 12px;">▼</span>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div id="userDropdown"
+                            style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.5rem; background: var(--bg-secondary); border: 1px solid var(--border-glass); border-radius: var(--radius-md); min-width: 220px; box-shadow: var(--shadow-lg); z-index: 1000;">
+                            <div style="padding: 1rem; border-bottom: 1px solid var(--border-glass);">
+                                <div style="font-weight: 600; color: var(--text-primary);" id="dropdownUserName">Usuario
+                                </div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);" id="dropdownUserEmail">
+                                    email@example.com</div>
+                                <div style="font-size: 0.75rem; color: var(--brand-gold); margin-top: 0.25rem;"
+                                    id="dropdownUserRole">Rol</div>
+                            </div>
+                            <div style="padding: 0.5rem;">
+                                <a href="#" onclick="navigateToSettings(); return false;"
+                                    style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; color: var(--text-secondary); text-decoration: none; border-radius: var(--radius-sm); transition: all 0.2s;">
+                                    <span>⚙️</span>
+                                    <span>Configuración</span>
+                                </a>
+                                <a href="#" onclick="showHelpModal(); return false;"
+                                    style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; color: var(--text-secondary); text-decoration: none; border-radius: var(--radius-sm); transition: all 0.2s;">
+                                    <span>❓</span>
+                                    <span>Ayuda</span>
+                                </a>
+                                <div style="border-top: 1px solid var(--border-glass); margin: 0.5rem 0;"></div>
+                                <a href="#" onclick="handleLogout(); return false;"
+                                    style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; color: var(--accent-coral); text-decoration: none; border-radius: var(--radius-sm); transition: all 0.2s;">
+                                    <span>🚪</span>
+                                    <span>Cerrar Sesión</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dynamic Content Container -->
+            <div id="contentContainer"></div>
+        </main>
+    </div>
+
+    <!-- Modal Container -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Modal</h2>
+                <button class="modal-close" id="modalClose">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer"></div>
+
+    <!-- Footer -->
+    <footer
+        style="border-top: 1px solid var(--border-glass); margin-top: 4rem; padding: 2rem; text-align: center; background: var(--bg-secondary);">
+        <div style="max-width: 800px; margin: 0 auto;">
+            <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                <a href="legal.html"
+                    style="color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;">Documentos
+                    Legales</a>
+                <a href="legal/terms-of-service.md" target="_blank"
+                    style="color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;">Términos</a>
+                <a href="legal/privacy-policy.md" target="_blank"
+                    style="color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;">Privacidad</a>
+                <a href="pricing.html"
+                    style="color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;">Precios</a>
+            </div>
+            <p style="color: var(--text-primary); font-size: 0.875rem; margin: 0.5rem 0; font-weight: 600;">
+                © 2025 VetConnect - BioVetAI
+            </p>
+            <p style="color: var(--text-muted); font-size: 0.75rem; margin: 0.5rem 0;">
+                Sistema integral de automatización veterinaria
+            </p>
+            <p style="color: var(--brand-gold); font-size: 0.75rem; margin: 0.5rem 0;">
+                <a href="https://www.biovetai.org" target="_blank"
+                    style="color: var(--brand-gold); text-decoration: none;">www.biovetai.org</a> |
+                Tel. <a href="tel:+19049347620" style="color: var(--brand-gold); text-decoration: none;">+1 (904)
+                    934-7620</a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+    <script src="modules/dashboard.js"></script>
+    <script src="modules/appointments.js"></script>
+    <script src="modules/clinical-records.js"></script>
+    <script src="modules/communication.js"></script>
+    <script src="modules/education.js"></script>
+    <script src="modules/billing.js"></script>
+    <script src="modules/inventory.js"></script>
+    <script src="modules/reports.js"></script>
+    <script src="modules/settings.js"></script>
+    <script src="auth/supabase-client.js"></script>
+    <script src="backend/utils/auth-manager.js"></script>
+    <script src="backend/utils/i18n.js"></script>
+
+    <script>
+        // Language Toggle Function
+        function toggleLanguage() {
+            const currentLang = i18n.getCurrentLanguage();
+            const newLang = currentLang === 'es' ? 'en' : 'es';
+            i18n.setLanguage(newLang);
+
+            // Update display
+            document.getElementById('currentLangDisplay').textContent = newLang.toUpperCase();
+        }
+
+        // Update language display on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentLang = i18n.getCurrentLanguage();
+            document.getElementById('currentLangDisplay').textContent = currentLang.toUpperCase();
+        });
+
+        // User Menu Dropdown
+        document.addEventListener('DOMContentLoaded', () => {
+            const userMenuBtn = document.getElementById('userMenuBtn');
+            const userDropdown = document.getElementById('userDropdown');
+
+            if (userMenuBtn && userDropdown) {
+                userMenuBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    userDropdown.style.display = userDropdown.style.display === 'none' ? 'block' : 'none';
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', () => {
+                    userDropdown.style.display = 'none';
+                });
+            }
+
+            // Load user info if AuthManager is available
+            if (typeof AuthManager !== 'undefined' && AuthManager.currentUser) {
+                const user = AuthManager.currentUser;
+                const role = AuthManager.getUserRole();
+
+                document.getElementById('userNameDisplay').textContent = user.name.split(' ')[0];
+                document.getElementById('dropdownUserName').textContent = user.name;
+                document.getElementById('dropdownUserEmail').textContent = user.email;
+                document.getElementById('dropdownUserRole').textContent = role ? role.name : 'Usuario';
+
+                // Update avatar initial
+                const initial = user.name.charAt(0);
+                document.querySelector('#userMenuBtn > div').textContent = initial;
+            }
+        });
+
+        // Navigate to Settings
+        function navigateToSettings() {
+            if (typeof App !== 'undefined') {
+                App.loadView('settings');
+            }
+            document.getElementById('userDropdown').style.display = 'none';
+        }
+
+        // Show Help Modal
+        function showHelpModal() {
+            if (typeof App !== 'undefined') {
+                App.showModal('Ayuda de VetConnect', `
+                    <div style="padding: 1rem;">
+                        <h3 style="color: var(--brand-gold); margin-bottom: 1rem;">¿Necesitas ayuda?</h3>
+                        
+                        <div style="margin-bottom: 1.5rem;">
+                            <h4 style="margin-bottom: 0.5rem;">📚 Recursos Disponibles:</h4>
+                            <ul style="color: var(--text-muted); margin-left: 1.5rem;">
+                                <li><a href="#" style="color: var(--brand-gold);">Guía de inicio rápido</a></li>
+                                <li><a href="#" style="color: var(--brand-gold);">Tutoriales en video</a></li>
+                                <li><a href="#" style="color: var(--brand-gold);">Preguntas frecuentes (FAQ)</a></li>
+                                <li><a href="legal.html" style="color: var(--brand-gold);">Documentación completa</a></li>
+                            </ul>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <h4 style="margin-bottom: 0.5rem;">💬 Contacto:</h4>
+                            <p style="color: var(--text-muted); margin-left: 1.5rem;">
+                                <strong>Email:</strong> support@vetconnect.com<br>
+                                <strong>Chat en vivo:</strong> Usuarios Premium<br>
+                                <strong>Horario:</strong> L-V 9AM - 6PM
+                            </p>
+                        </div>
+
+                        <div style="background: var(--bg-glass); padding: 1rem; border-radius: var(--radius-md); border-left: 3px solid var(--brand-gold);">
+                            <strong>💎 Tip:</strong> Los usuarios Premium tienen acceso a soporte prioritario y chat en vivo.
+                        </div>
+                    </div>
+                `);
+            }
+            document.getElementById('userDropdown').style.display = 'none';
+        }
+
+        // Handle Logout
+        async function handleLogout() {
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                // Check if using Supabase auth
+                if (typeof Auth !== 'undefined' && Auth.isAuthenticated()) {
+                    try {
+                        await Auth.signOut();
+                    } catch (error) {
+                        console.error('Logout error:', error);
+                    }
+                }
+
+                // Clear demo mode
+                localStorage.removeItem('biovetai_demo_mode');
+                localStorage.removeItem('biovetai_demo_user');
+                localStorage.removeItem('vetconnect_session');
+
+                if (typeof App !== 'undefined') {
+                    App.showNotification('Sesión Cerrada', 'Has cerrado sesión correctamente', 'success');
+                }
+
+                // Redirect to login after short delay
+                setTimeout(() => {
+                    window.location.href = 'auth/login.html';
+                }, 1000);
+            }
+        }
+
+        // Initialize app with auth check
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Check for demo mode first
+            const demoMode = localStorage.getItem('biovetai_demo_mode');
+            const demoUser = localStorage.getItem('biovetai_demo_user');
+
+            if (demoMode && demoUser) {
+                // Demo mode - proceed without real auth
+                const user = JSON.parse(demoUser);
+                updateUserDisplay(user);
+            } else {
+                // Real auth check
+                if (typeof initSupabase !== 'undefined') {
+                    await initSupabase();
+
+                    // Check if authenticated
+                    if (typeof Auth !== 'undefined' && !Auth.isAuthenticated()) {
+                        // Not authenticated, redirect to login
+                        window.location.href = 'auth/login.html';
+                        return;
+                    }
+
+                    // Update user display
+                    if (typeof Auth !== 'undefined' && Auth.getProfile()) {
+                        updateUserDisplay(Auth.getProfile());
+                    }
+                }
+            }
+
+            // Initialize the app
+            if (typeof App !== 'undefined') {
+                App.init();
+            }
+        });
+
+        // Update user display in header
+        function updateUserDisplay(user) {
+            if (!user) return;
+
+            const initial = (user.name || user.email || 'U').charAt(0).toUpperCase();
+            const displayName = user.name || user.email?.split('@')[0] || 'Usuario';
+            const role = user.role ? (ROLE_LABELS?.[user.role] || user.role) : 'Usuario';
+
+            document.getElementById('userNameDisplay').textContent = displayName.split(' ')[0];
+            document.getElementById('dropdownUserName').textContent = displayName;
+            document.getElementById('dropdownUserEmail').textContent = user.email || '';
+            document.getElementById('dropdownUserRole').textContent = role;
+
+            const avatarEl = document.querySelector('#userMenuBtn > div');
+            if (avatarEl) avatarEl.textContent = initial;
+        }
+    </script>
+</body>
+
+</html>
