@@ -45,24 +45,30 @@ Evite pérdidas y robos hormiga. Nuestro sistema de alertas le avisa cuando el s
 
 > **🎁 Oferta de Lanzamiento:** ¡Prueba gratuita de 14 días sin compromiso!
 
-### Plan Esencial
-*Ideal para veterinarios independientes*
-*   Gestión de Citas
-*   Historias Clínicas Ilimitadas
-*   Recordatorios por Email
+### Plan Free ($0/mes)
+*Ideal para dar sus primeros pasos*
+*   Gestión de hasta 50 Citas al mes
+*   Uso de Historias Clínicas Básicas
+*   Almacenamiento Local Seguro
 
-### Plan Clínica (Más Popular)
+### Plan Esencial ($49/mes)
+*Ideal para veterinarios independientes*
+*   Gestión de Citas Ilimitadas
+*   Historias Clínicas Completas
+*   Recordatorios por Email de cortesía
+
+### Plan Clínica ($99/mes - MÁS POPULAR)
 *Para clínicas en crecimiento*
 *   Todo lo de Esencial
-*   **Integración con WhatsApp**
-*   Control de Inventario
-*   2 Usuarios Administrativos
+*   **Integración con WhatsApp Business**
+*   Control de Inventario y Stock
+*   Hasta 5 Usuarios Administrativos
 
-### Plan Hospital
+### Plan Hospital ($199/mes)
 *Para centros de alto volumen*
-*   Usuarios Ilimitados
-*   Reportes Financieros Avanzados
-*   Soporte Prioritario 24/7
+*   Usuarios y Sedes Ilimitadas
+*   Reportes Financieros y Analítica
+*   Soporte Prioritario VIP 24/7
 
 ---
 
