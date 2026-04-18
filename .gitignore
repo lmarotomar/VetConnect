@@ -1,0 +1,12 @@
+# Credentials - NEVER commit
+config.js
+
+# System
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Dependencies (if added later)
+node_modules/
