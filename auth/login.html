@@ -217,15 +217,6 @@
                 ¿No tienes cuenta? <a href="register.html">Regístrate aquí</a>
             </div>
 
-            <div class="auth-divider">
-                <span>Demo</span>
-            </div>
-
-            <div style="text-align: center;">
-                <button class="btn btn-secondary" onclick="demoLogin()" style="width: 100%;">
-                    🎮 Acceso Demo (Sin registro)
-                </button>
-            </div>
         </div>
     </div>
 
@@ -288,23 +279,6 @@
                 loginBtn.innerHTML = 'Iniciar Sesión';
                 form.classList.remove('loading');
             }
-        }
-
-        // Demo login (bypasses auth for demonstration)
-        function demoLogin() {
-            // Set demo mode in localStorage
-            localStorage.setItem('biovetai_demo_mode', 'true');
-            localStorage.setItem('biovetai_demo_user', JSON.stringify({
-                name: 'Usuario Demo',
-                email: 'demo@biovetai.org',
-                role: 'clinic_admin'
-            }));
-
-            showSuccess('Accediendo en modo demo...');
-
-            setTimeout(() => {
-                window.location.href = '../index.html';
-            }, 1000);
         }
 
         // Show reset password form

@@ -345,39 +345,36 @@
 
         // Initialize app with auth check
         window.addEventListener('DOMContentLoaded', async () => {
-            // Check for demo mode first
-            const demoMode = localStorage.getItem('biovetai_demo_mode');
-            const demoUser = localStorage.getItem('biovetai_demo_user');
+            // Clear any legacy demo mode keys
+            localStorage.removeItem('biovetai_demo_mode');
+            localStorage.removeItem('biovetai_demo_user');
 
-            if (demoMode && demoUser) {
-                // Demo mode - proceed without real auth
-                const user = JSON.parse(demoUser);
-                updateUserDisplay(user);
-            } else {
-                // Real auth check — if config.js failed to load, block access
-                if (!window.VETCONNECT_CONFIG) {
+            // Auth check via Supabase directly — no dependency on config.js
+            try {
+                const _supa = window.supabase.createClient(
+                    'https://dppxgwjvfiqbgjupxipf.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwcHhnd2p2ZmlxYmdqdXB4aXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4ODE4MDksImV4cCI6MjA4MjQ1NzgwOX0.zBDqyWejXCkqeQ-9FqRIHg2QEeppwAgTGymZ_m3DLEc'
+                );
+                const { data: { session } } = await _supa.auth.getSession();
+
+                if (!session) {
                     window.location.href = 'auth/login.html';
                     return;
                 }
 
-                if (typeof initSupabase !== 'undefined') {
-                    await initSupabase();
+                // Authenticated — update user display
+                const user = session.user;
+                const profile = {
+                    name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario',
+                    email: user.email,
+                    role: user.user_metadata?.role || 'clinic_admin'
+                };
+                updateUserDisplay(profile);
 
-                    // Check if authenticated
-                    if (typeof Auth === 'undefined' || !Auth.isAuthenticated()) {
-                        window.location.href = 'auth/login.html';
-                        return;
-                    }
-
-                    // Update user display
-                    if (Auth.getProfile()) {
-                        updateUserDisplay(Auth.getProfile());
-                    }
-                } else {
-                    // supabase-client.js no cargó — bloquear acceso
-                    window.location.href = 'auth/login.html';
-                    return;
-                }
+            } catch (e) {
+                console.error('Auth check failed:', e);
+                window.location.href = 'auth/login.html';
+                return;
             }
 
             // Initialize the app
