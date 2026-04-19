@@ -1,86 +1,69 @@
 // Main Application Logic
 const App = {
     currentView: 'dashboard',
-    mockData: {
-        clients: [
-            {
-                id: 1,
-                name: 'María González',
-                email: 'maria@example.com',
-                phone: '+1234567890',
-                pets: [
-                    { id: 1, name: 'Max', species: 'Perro', breed: 'Labrador', age: 3 }
-                ]
-            },
-            {
-                id: 2,
-                name: 'Carlos Ramírez',
-                email: 'carlos@example.com',
-                phone: '+1234567891',
-                pets: [
-                    { id: 2, name: 'Luna', species: 'Gato', breed: 'Siamés', age: 2 }
-                ]
-            }
-        ],
-        appointments: [
-            {
-                id: 1,
-                clientId: 1,
-                petId: 1,
-                date: '2025-12-07',
-                time: '10:00',
-                type: 'Consulta General',
-                status: 'confirmed',
-                notes: 'Vacunación anual'
-            },
-            {
-                id: 2,
-                clientId: 2,
-                petId: 2,
-                date: '2025-12-07',
-                time: '14:00',
-                type: 'Control',
-                status: 'pending',
-                notes: 'Control post-operatorio'
-            }
-        ],
+
+    // Live data cache — loaded from Supabase on init
+    data: {
+        clients: [],
+        appointments: [],
         clinicalRecords: [],
         communications: [],
         educationalContent: [
-            {
-                id: 1,
-                title: 'Cuidados Post-Vacunación',
-                category: 'Vacunación',
-                content: 'Instrucciones para después de la vacunación...'
-            },
-            {
-                id: 2,
-                title: 'Alimentación Saludable para Perros',
-                category: 'Nutrición',
-                content: 'Guía completa de nutrición canina...'
-            }
+            { id: 1, title: 'Cuidados Post-Vacunación', category: 'Vacunación', content: 'Instrucciones para después de la vacunación...' },
+            { id: 2, title: 'Alimentación Saludable para Perros', category: 'Nutrición', content: 'Guía completa de nutrición canina...' }
         ]
     },
 
-    init() {
+    async init() {
         this.setupEventListeners();
+        await this.loadData();
         this.loadView('dashboard');
-        this.loadMockData();
+    },
+
+    // Load all data from Supabase into local cache
+    async loadData() {
+        if (typeof DB === 'undefined') return;
+        try {
+            const [clients, appointments, records, comms] = await Promise.all([
+                DB.getClients(),
+                DB.getAppointments(),
+                DB.getClinicalRecords(),
+                DB.getCommunications()
+            ]);
+            this.data.clients      = clients      || [];
+            this.data.appointments = appointments || [];
+            this.data.clinicalRecords = records   || [];
+            this.data.communications  = comms     || [];
+        } catch (e) {
+            console.error('Error loading data from Supabase:', e);
+        }
+    },
+
+    // Refresh a specific collection and re-render current view
+    async refreshData(collection) {
+        if (typeof DB === 'undefined') return;
+        try {
+            if (collection === 'clients' || !collection) {
+                this.data.clients = await DB.getClients() || [];
+            }
+            if (collection === 'appointments' || !collection) {
+                this.data.appointments = await DB.getAppointments() || [];
+            }
+        } catch (e) {
+            console.error('Error refreshing data:', e);
+        }
+        this.loadView(this.currentView);
     },
 
     setupEventListeners() {
-        // Navigation
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const view = e.currentTarget.dataset.view;
-                if (view) {
-                    this.navigateTo(view);
-                }
+                if (view) this.navigateTo(view);
             });
         });
 
-        // Mobile menu
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
         const sidebar = document.getElementById('sidebar');
         if (mobileMenuBtn) {
@@ -89,46 +72,30 @@ const App = {
             });
         }
 
-        // Modal close
         const modalClose = document.getElementById('modalClose');
         const modalOverlay = document.getElementById('modalOverlay');
-        if (modalClose) {
-            modalClose.addEventListener('click', () => this.closeModal());
-        }
+        if (modalClose) modalClose.addEventListener('click', () => this.closeModal());
         if (modalOverlay) {
             modalOverlay.addEventListener('click', (e) => {
-                if (e.target === modalOverlay) {
-                    this.closeModal();
-                }
+                if (e.target === modalOverlay) this.closeModal();
             });
         }
 
-        // New appointment button
         const newAppointmentBtn = document.getElementById('newAppointmentBtn');
         if (newAppointmentBtn) {
-            newAppointmentBtn.addEventListener('click', () => {
-                this.showNewAppointmentModal();
-            });
+            newAppointmentBtn.addEventListener('click', () => this.showNewAppointmentModal());
         }
     },
 
     navigateTo(view) {
         this.currentView = view;
-
-        // Update active nav
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.remove('active');
-            if (link.dataset.view === view) {
-                link.classList.add('active');
-            }
+            if (link.dataset.view === view) link.classList.add('active');
         });
-
-        // Close mobile menu
         if (window.innerWidth <= 768) {
             document.getElementById('sidebar').classList.remove('mobile-visible');
         }
-
-        // Load view
         this.loadView(view);
     },
 
@@ -146,170 +113,142 @@ const App = {
         };
 
         document.getElementById('pageTitle').textContent = titleMap[view] || view;
-
-        // Load module content
         const container = document.getElementById('contentContainer');
 
         switch (view) {
             case 'dashboard':
-                if (typeof Dashboard !== 'undefined') {
-                    container.innerHTML = Dashboard.render();
-                    Dashboard.init();
-                }
+                if (typeof Dashboard !== 'undefined') { container.innerHTML = Dashboard.render(); Dashboard.init(); }
                 break;
             case 'appointments':
-                if (typeof Appointments !== 'undefined') {
-                    container.innerHTML = Appointments.render();
-                    Appointments.init();
-                }
+                if (typeof Appointments !== 'undefined') { container.innerHTML = Appointments.render(); Appointments.init(); }
                 break;
             case 'clinical-records':
-                if (typeof ClinicalRecords !== 'undefined') {
-                    container.innerHTML = ClinicalRecords.render();
-                    ClinicalRecords.init();
-                }
+                if (typeof ClinicalRecords !== 'undefined') { container.innerHTML = ClinicalRecords.render(); ClinicalRecords.init(); }
                 break;
             case 'communication':
-                if (typeof Communication !== 'undefined') {
-                    container.innerHTML = Communication.render();
-                    Communication.init();
-                }
+                if (typeof Communication !== 'undefined') { container.innerHTML = Communication.render(); Communication.init(); }
                 break;
             case 'education':
-                if (typeof Education !== 'undefined') {
-                    container.innerHTML = Education.render();
-                    Education.init();
-                }
+                if (typeof Education !== 'undefined') { container.innerHTML = Education.render(); Education.init(); }
                 break;
             case 'billing':
-                if (typeof Billing !== 'undefined') {
-                    container.innerHTML = Billing.render();
-                }
+                if (typeof Billing !== 'undefined') container.innerHTML = Billing.render();
                 break;
             case 'inventory':
-                if (typeof Inventory !== 'undefined') {
-                    container.innerHTML = Inventory.render();
-                }
+                if (typeof Inventory !== 'undefined') container.innerHTML = Inventory.render();
                 break;
             case 'reports':
-                if (typeof Reports !== 'undefined') {
-                    container.innerHTML = Reports.render();
-                    Reports.init();
-                }
+                if (typeof Reports !== 'undefined') { container.innerHTML = Reports.render(); Reports.init(); }
                 break;
             case 'settings':
-                if (typeof Settings !== 'undefined') {
-                    container.innerHTML = Settings.render();
-                }
+                if (typeof Settings !== 'undefined') container.innerHTML = Settings.render();
                 break;
         }
     },
 
-    loadMockData() {
-        // Load data from localStorage if exists, otherwise use mock data
-        const storedData = localStorage.getItem('vetFlowData');
-        if (storedData) {
-            this.mockData = JSON.parse(storedData);
-        } else {
-            this.saveMockData();
-        }
-    },
-
-    saveMockData() {
-        localStorage.setItem('vetFlowData', JSON.stringify(this.mockData));
-    },
+    // ─── READ (sync — from cache) ─────────────────────────────────────────────
 
     getClients() {
-        return this.mockData.clients;
+        return this.data.clients;
     },
 
     getClient(id) {
-        return this.mockData.clients.find(c => c.id === id);
-    },
-
-    addClient(client) {
-        const newClient = {
-            ...client,
-            id: Date.now(),
-            pets: []
-        };
-        this.mockData.clients.push(newClient);
-        this.saveMockData();
-        return newClient;
+        const numId = parseInt(id);
+        return this.data.clients.find(c => c.id === numId || c.id === id);
     },
 
     getAppointments() {
-        return this.mockData.appointments;
+        return this.data.appointments;
     },
 
     getAppointment(id) {
-        return this.mockData.appointments.find(a => a.id === id);
+        const numId = parseInt(id);
+        return this.data.appointments.find(a => a.id === numId || a.id === id);
     },
 
-    addAppointment(appointment) {
-        const newAppointment = {
-            ...appointment,
-            id: Date.now(),
-            status: 'pending'
-        };
-        this.mockData.appointments.push(newAppointment);
-        this.saveMockData();
-
-        // Trigger automation
-        this.triggerAutomation('appointment_created', newAppointment);
-
-        return newAppointment;
-    },
-
-    updateAppointment(id, updates) {
-        const index = this.mockData.appointments.findIndex(a => a.id === id);
-        if (index !== -1) {
-            this.mockData.appointments[index] = {
-                ...this.mockData.appointments[index],
-                ...updates
-            };
-            this.saveMockData();
-        }
-    },
-
-    getClinicalRecords(petId) {
-        return this.mockData.clinicalRecords.filter(r => r.petId === petId);
-    },
-
-    addClinicalRecord(record) {
-        const newRecord = {
-            ...record,
-            id: Date.now(),
-            createdAt: new Date().toISOString()
-        };
-        this.mockData.clinicalRecords.push(newRecord);
-        this.saveMockData();
-        return newRecord;
+    getClinicalRecords(patientId) {
+        return this.data.clinicalRecords.filter(r => r.patient_id === patientId || r.petId === patientId);
     },
 
     getCommunications(clientId) {
-        return this.mockData.communications.filter(c => c.clientId === clientId);
-    },
-
-    addCommunication(communication) {
-        const newComm = {
-            ...communication,
-            id: Date.now(),
-            timestamp: new Date().toISOString()
-        };
-        this.mockData.communications.push(newComm);
-        this.saveMockData();
-        return newComm;
+        return this.data.communications.filter(c => c.client_id === clientId || c.clientId === clientId);
     },
 
     getEducationalContent() {
-        return this.mockData.educationalContent;
+        return this.data.educationalContent;
     },
 
-    // Automation Engine
-    triggerAutomation(eventType, data) {
-        console.log('🤖 Automation triggered:', eventType, data);
+    // ─── WRITE (async — Supabase + cache update) ──────────────────────────────
 
+    async addClient(client) {
+        // Optimistic local add
+        const tempId = Date.now();
+        const newClient = { ...client, id: tempId, patients: [], pets: [] };
+        this.data.clients.push(newClient);
+
+        if (typeof DB !== 'undefined') {
+            const saved = await DB.addClient(client);
+            if (saved) {
+                const idx = this.data.clients.findIndex(c => c.id === tempId);
+                if (idx !== -1) this.data.clients[idx] = { ...saved, patients: [], pets: [] };
+                return this.data.clients.find(c => c.id === (saved.id || tempId));
+            }
+        }
+        return newClient;
+    },
+
+    async addAppointment(appointment) {
+        const tempId = Date.now();
+        const newAppointment = { ...appointment, id: tempId, status: 'pending' };
+        this.data.appointments.push(newAppointment);
+
+        if (typeof DB !== 'undefined') {
+            const saved = await DB.addAppointment(appointment);
+            if (saved) {
+                const idx = this.data.appointments.findIndex(a => a.id === tempId);
+                if (idx !== -1) this.data.appointments[idx] = saved;
+            }
+        }
+
+        this.triggerAutomation('appointment_created', newAppointment);
+        return newAppointment;
+    },
+
+    async updateAppointment(id, updates) {
+        const idx = this.data.appointments.findIndex(a => a.id === id || a.id === parseInt(id));
+        if (idx !== -1) {
+            this.data.appointments[idx] = { ...this.data.appointments[idx], ...updates };
+        }
+        if (typeof DB !== 'undefined') {
+            await DB.updateAppointment(id, updates);
+        }
+    },
+
+    async addClinicalRecord(record) {
+        const newRecord = { ...record, id: Date.now(), createdAt: new Date().toISOString() };
+        this.data.clinicalRecords.push(newRecord);
+        if (typeof DB !== 'undefined') {
+            const saved = await DB.addClinicalRecord(record);
+            if (saved) {
+                const idx = this.data.clinicalRecords.findIndex(r => r.id === newRecord.id);
+                if (idx !== -1) this.data.clinicalRecords[idx] = saved;
+            }
+        }
+        return newRecord;
+    },
+
+    async addCommunication(communication) {
+        const newComm = { ...communication, id: Date.now(), timestamp: new Date().toISOString() };
+        this.data.communications.push(newComm);
+        if (typeof DB !== 'undefined') {
+            await DB.addCommunication(communication);
+        }
+        return newComm;
+    },
+
+    // ─── AUTOMATION ───────────────────────────────────────────────────────────
+
+    triggerAutomation(eventType, data) {
         switch (eventType) {
             case 'appointment_created':
                 this.sendConfirmationMessage(data);
@@ -325,9 +264,8 @@ const App = {
     },
 
     sendConfirmationMessage(appointment) {
-        const client = this.getClient(appointment.clientId);
+        const client = this.getClient(appointment.clientId || appointment.client_id);
         if (!client) return;
-
         const message = {
             clientId: client.id,
             channel: 'whatsapp',
@@ -335,48 +273,38 @@ const App = {
             content: `Hola ${client.name}, tu cita ha sido confirmada para el ${appointment.date} a las ${appointment.time}.`,
             status: 'sent'
         };
-
         this.addCommunication(message);
         this.showNotification('Confirmación enviada', `WhatsApp enviado a ${client.name}`, 'success');
     },
 
     scheduleReminders(appointment) {
-        console.log('📅 Recordatorios programados:', appointment);
-        // In production, this would schedule actual reminders
         this.showNotification('Recordatorios programados', 'Se enviarán 24h y 2h antes de la cita', 'info');
     },
 
     sendFollowUpInstructions(appointment) {
-        console.log('📧 Enviando instrucciones de seguimiento...');
         this.showNotification('Seguimiento enviado', 'Instrucciones de cuidado enviadas al cliente', 'success');
     },
 
     generateClinicalReport(record) {
-        console.log('📄 Generando reporte clínico...');
         this.showNotification('Reporte generado', 'Historia clínica actualizada', 'success');
     },
 
-    // Modal Management
+    // ─── MODALS ───────────────────────────────────────────────────────────────
+
     showModal(title, content) {
         const modal = document.getElementById('modalOverlay');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
-
-        modalTitle.textContent = title;
-        modalBody.innerHTML = content;
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalBody').innerHTML = content;
         modal.classList.add('active');
     },
 
     closeModal() {
-        const modal = document.getElementById('modalOverlay');
-        modal.classList.remove('active');
+        document.getElementById('modalOverlay').classList.remove('active');
     },
 
     showNewAppointmentModal() {
         const clients = this.getClients();
-        const clientOptions = clients.map(c =>
-            `<option value="${c.id}">${c.name}</option>`
-        ).join('');
+        const clientOptions = clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
         const content = `
       <form id="newAppointmentForm">
@@ -387,24 +315,20 @@ const App = {
             ${clientOptions}
           </select>
         </div>
-        
         <div class="form-group">
           <label class="form-label">Mascota</label>
           <select class="form-select" id="appointmentPet" required>
             <option value="">Seleccionar mascota...</option>
           </select>
         </div>
-        
         <div class="form-group">
           <label class="form-label">Fecha</label>
           <input type="date" class="form-input" id="appointmentDate" required>
         </div>
-        
         <div class="form-group">
           <label class="form-label">Hora</label>
           <input type="time" class="form-input" id="appointmentTime" required>
         </div>
-        
         <div class="form-group">
           <label class="form-label">Tipo de Consulta</label>
           <select class="form-select" id="appointmentType" required>
@@ -415,70 +339,58 @@ const App = {
             <option value="Emergencia">Emergencia</option>
           </select>
         </div>
-        
         <div class="form-group">
           <label class="form-label">Notas</label>
           <textarea class="form-textarea" id="appointmentNotes"></textarea>
         </div>
-        
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
           <button type="submit" class="btn btn-primary" style="flex: 1;">Crear Cita</button>
           <button type="button" class="btn btn-secondary" onclick="App.closeModal()">Cancelar</button>
         </div>
-      </form>
-    `;
+      </form>`;
 
         this.showModal('Nueva Cita', content);
 
-        // Setup form handlers
         setTimeout(() => {
             const clientSelect = document.getElementById('appointmentClient');
             const petSelect = document.getElementById('appointmentPet');
 
             clientSelect.addEventListener('change', (e) => {
-                const client = this.getClient(parseInt(e.target.value));
-                if (client && client.pets) {
+                const client = this.getClient(e.target.value);
+                if (client) {
+                    const pets = client.patients || client.pets || [];
                     petSelect.innerHTML = '<option value="">Seleccionar mascota...</option>' +
-                        client.pets.map(p => `<option value="${p.id}">${p.name} (${p.species})</option>`).join('');
+                        pets.map(p => `<option value="${p.id}">${p.name} (${p.species || p.especie || ''})</option>`).join('');
                 }
             });
 
             const form = document.getElementById('newAppointmentForm');
-            form.addEventListener('submit', (e) => {
+            form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-
                 const appointment = {
-                    clientId: parseInt(clientSelect.value),
-                    petId: parseInt(petSelect.value),
+                    clientId: clientSelect.value,
+                    petId: petSelect.value,
                     date: document.getElementById('appointmentDate').value,
                     time: document.getElementById('appointmentTime').value,
                     type: document.getElementById('appointmentType').value,
                     notes: document.getElementById('appointmentNotes').value
                 };
-
-                this.addAppointment(appointment);
+                await this.addAppointment(appointment);
                 this.closeModal();
                 this.showNotification('Cita creada', 'La cita ha sido creada exitosamente', 'success');
-
-                // Reload current view if in appointments
-                if (this.currentView === 'appointments') {
-                    this.loadView('appointments');
+                if (this.currentView === 'appointments' || this.currentView === 'dashboard') {
+                    this.loadView(this.currentView);
                 }
             });
         }, 100);
     },
 
-    // Notification System
+    // ─── NOTIFICATIONS ────────────────────────────────────────────────────────
+
     showNotification(title, message, type = 'info') {
         const container = document.getElementById('notificationContainer');
         const id = Date.now();
-
-        const icons = {
-            success: '✅',
-            error: '❌',
-            warning: '⚠️',
-            info: 'ℹ️'
-        };
+        const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
 
         const notification = document.createElement('div');
         notification.className = 'notification';
@@ -488,11 +400,9 @@ const App = {
         <span>${icons[type] || icons.info} ${title}</span>
         <button class="modal-close" onclick="this.parentElement.parentElement.remove()">✕</button>
       </div>
-      <div class="notification-body">${message}</div>
-    `;
+      <div class="notification-body">${message}</div>`;
 
         container.appendChild(notification);
-
         setTimeout(() => {
             const notif = document.getElementById(`notification-${id}`);
             if (notif) {
@@ -502,17 +412,15 @@ const App = {
         }, 5000);
     },
 
-    // Utility Functions
+    // ─── UTILITIES ────────────────────────────────────────────────────────────
+
     formatDate(dateString) {
+        if (!dateString) return '';
         const date = new Date(dateString);
-        return date.toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+        return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
     },
 
     formatTime(timeString) {
-        return timeString;
+        return timeString || '';
     }
 };

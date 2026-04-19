@@ -149,12 +149,13 @@ const DB = {
 
     // ─── CLINICAL RECORDS ─────────────────────────────────────────────────────
 
-    async getClinicalRecords(patientId) {
-        const { data, error } = await supabase
+    async getClinicalRecords(patientId = null) {
+        let query = supabase
             .from('clinical_records')
             .select('*')
-            .eq('patient_id', patientId)
             .order('record_date', { ascending: false });
+        if (patientId) query = query.eq('patient_id', patientId);
+        const { data, error } = await query;
         if (error) console.error('DB.getClinicalRecords:', error.message);
         return data || [];
     },
@@ -182,12 +183,13 @@ const DB = {
 
     // ─── COMMUNICATIONS ───────────────────────────────────────────────────────
 
-    async getCommunications(clientId) {
-        const { data, error } = await supabase
+    async getCommunications(clientId = null) {
+        let query = supabase
             .from('communications')
             .select('*')
-            .eq('client_id', clientId)
             .order('created_at', { ascending: false });
+        if (clientId) query = query.eq('client_id', clientId);
+        const { data, error } = await query;
         if (error) console.error('DB.getCommunications:', error.message);
         return data || [];
     },

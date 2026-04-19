@@ -207,6 +207,7 @@
     </footer>
 
     <!-- Scripts -->
+    <script src="db.js"></script>
     <script src="app.js"></script>
     <script src="modules/dashboard.js"></script>
     <script src="modules/appointments.js"></script>
@@ -371,6 +372,11 @@
 
             sessionStorage.removeItem('vc_auth_redirect');
 
+            // Initialize global supabase variable needed by db.js
+            if (typeof initSupabase !== 'undefined') {
+                await initSupabase();
+            }
+
             // Authenticated — update user display from stored session
             try {
                 const user = storedSession.user;
@@ -386,7 +392,7 @@
 
             // Initialize the app
             if (typeof App !== 'undefined') {
-                App.init();
+                await App.init();
             }
         });
 
