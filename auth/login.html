@@ -308,7 +308,7 @@
         }
 
         // Show reset password form
-        function showResetPassword() {
+        async function showResetPassword() {
             const email = document.getElementById('email').value;
 
             if (!email) {
@@ -316,8 +316,15 @@
                 return;
             }
 
-            // TODO: Implement password reset
-            showSuccess('Si el correo existe, recibirás instrucciones para restablecer tu contraseña.');
+            try {
+                const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: 'https://vet-connect-teal.vercel.app/auth/reset-password.html'
+                });
+                if (error) throw error;
+                showSuccess('Si el correo existe, recibirás instrucciones para restablecer tu contraseña.');
+            } catch (error) {
+                showError('Error al enviar el correo. Intenta de nuevo.');
+            }
         }
 
         // Helper functions
