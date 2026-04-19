@@ -348,34 +348,40 @@
             localStorage.removeItem('biovetai_demo_mode');
             localStorage.removeItem('biovetai_demo_user');
 
-            // Auth check via Supabase directly — no dependency on config.js
+            // Auth check — read Supabase session directly from localStorage (sync, no race condition)
+            function getStoredSession() {
+                try {
+                    const key = 'sb-dppxgwjvfiqbgjupxipf-auth-token';
+                    const raw = localStorage.getItem(key);
+                    if (!raw) return null;
+                    const parsed = JSON.parse(raw);
+                    // Check expiry
+                    if (parsed.expires_at && parsed.expires_at * 1000 < Date.now()) return null;
+                    return parsed;
+                } catch { return null; }
+            }
+
+            const storedSession = getStoredSession();
+
+            if (!storedSession) {
+                sessionStorage.setItem('vc_auth_redirect', '1');
+                window.location.replace('auth/login.html');
+                return;
+            }
+
+            sessionStorage.removeItem('vc_auth_redirect');
+
+            // Authenticated — update user display from stored session
             try {
-                const _supa = window.supabase.createClient(
-                    'https://dppxgwjvfiqbgjupxipf.supabase.co',
-                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwcHhnd2p2ZmlxYmdqdXB4aXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4ODE4MDksImV4cCI6MjA4MjQ1NzgwOX0.zBDqyWejXCkqeQ-9FqRIHg2QEeppwAgTGymZ_m3DLEc'
-                );
-                const { data: { session } } = await _supa.auth.getSession();
-
-                if (!session) {
-                    sessionStorage.setItem('vc_auth_redirect', '1');
-                    window.location.replace('auth/login.html');
-                    return;
-                }
-                sessionStorage.removeItem('vc_auth_redirect');
-
-                // Authenticated — update user display
-                const user = session.user;
+                const user = storedSession.user;
                 const profile = {
                     name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario',
                     email: user.email,
                     role: user.user_metadata?.role || 'clinic_admin'
                 };
                 updateUserDisplay(profile);
-
             } catch (e) {
-                console.error('Auth check failed:', e);
-                window.location.href = 'auth/login.html';
-                return;
+                console.error('Profile load error:', e);
             }
 
             // Initialize the app
