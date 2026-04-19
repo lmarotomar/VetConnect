@@ -219,7 +219,6 @@
     <script src="modules/settings.js"></script>
     <script src="config.js"></script>
     <script src="auth/supabase-client.js"></script>
-    <script src="backend/utils/auth-manager.js"></script>
     <script src="backend/utils/i18n.js"></script>
 
     <script>
@@ -358,9 +357,11 @@
                 const { data: { session } } = await _supa.auth.getSession();
 
                 if (!session) {
-                    window.location.href = 'auth/login.html';
+                    sessionStorage.setItem('vc_auth_redirect', '1');
+                    window.location.replace('auth/login.html');
                     return;
                 }
+                sessionStorage.removeItem('vc_auth_redirect');
 
                 // Authenticated — update user display
                 const user = session.user;
