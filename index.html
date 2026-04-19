@@ -217,6 +217,7 @@
     <script src="modules/inventory.js"></script>
     <script src="modules/reports.js"></script>
     <script src="modules/settings.js"></script>
+    <script src="config.js"></script>
     <script src="auth/supabase-client.js"></script>
     <script src="backend/utils/auth-manager.js"></script>
     <script src="backend/utils/i18n.js"></script>
@@ -353,21 +354,29 @@
                 const user = JSON.parse(demoUser);
                 updateUserDisplay(user);
             } else {
-                // Real auth check
+                // Real auth check — if config.js failed to load, block access
+                if (!window.VETCONNECT_CONFIG) {
+                    window.location.href = 'auth/login.html';
+                    return;
+                }
+
                 if (typeof initSupabase !== 'undefined') {
                     await initSupabase();
 
                     // Check if authenticated
-                    if (typeof Auth !== 'undefined' && !Auth.isAuthenticated()) {
-                        // Not authenticated, redirect to login
+                    if (typeof Auth === 'undefined' || !Auth.isAuthenticated()) {
                         window.location.href = 'auth/login.html';
                         return;
                     }
 
                     // Update user display
-                    if (typeof Auth !== 'undefined' && Auth.getProfile()) {
+                    if (Auth.getProfile()) {
                         updateUserDisplay(Auth.getProfile());
                     }
+                } else {
+                    // supabase-client.js no cargó — bloquear acceso
+                    window.location.href = 'auth/login.html';
+                    return;
                 }
             }
 
