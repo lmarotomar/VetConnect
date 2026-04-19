@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Admin Panel - VetConnect</title>
+    <title>Super Admin — VetConnect</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -21,31 +21,31 @@
             </div>
 
             <nav class="nav-menu">
-                <a href="#" class="nav-item active" data-view="overview" onclick="loadView('overview')">
+                <a href="#" class="nav-item active" data-view="overview" onclick="AdminPanel.loadView('overview'); return false;">
                     <span class="nav-icon">📊</span>
                     <span class="nav-text">Vista General</span>
                 </a>
-                <a href="#" class="nav-item" data-view="clinics" onclick="loadView('clinics')">
+                <a href="#" class="nav-item" data-view="clinics" onclick="AdminPanel.loadView('clinics'); return false;">
                     <span class="nav-icon">🏥</span>
                     <span class="nav-text">Clínicas</span>
                 </a>
-                <a href="#" class="nav-item" data-view="users" onclick="loadView('users')">
+                <a href="#" class="nav-item" data-view="users" onclick="AdminPanel.loadView('users'); return false;">
                     <span class="nav-icon">👥</span>
                     <span class="nav-text">Usuarios</span>
                 </a>
-                <a href="#" class="nav-item" data-view="subscriptions" onclick="loadView('subscriptions')">
+                <a href="#" class="nav-item" data-view="subscriptions" onclick="AdminPanel.loadView('subscriptions'); return false;">
                     <span class="nav-icon">💳</span>
                     <span class="nav-text">Suscripciones</span>
                 </a>
-                <a href="#" class="nav-item" data-view="analytics" onclick="loadView('analytics')">
+                <a href="#" class="nav-item" data-view="analytics" onclick="AdminPanel.loadView('analytics'); return false;">
                     <span class="nav-icon">📈</span>
                     <span class="nav-text">Analytics</span>
                 </a>
-                <a href="#" class="nav-item" data-view="support" onclick="loadView('support')">
+                <a href="#" class="nav-item" data-view="support" onclick="AdminPanel.loadView('support'); return false;">
                     <span class="nav-icon">🛟</span>
                     <span class="nav-text">Soporte</span>
                 </a>
-                <a href="#" class="nav-item" data-view="settings" onclick="loadView('settings')">
+                <a href="#" class="nav-item" data-view="settings" onclick="AdminPanel.loadView('settings'); return false;">
                     <span class="nav-icon">⚙️</span>
                     <span class="nav-text">Configuración</span>
                 </a>
@@ -53,7 +53,11 @@
                 <div style="margin-top: auto; padding-top: 2rem;">
                     <a href="index.html" class="nav-item">
                         <span class="nav-icon">🏥</span>
-                        <span class="nav-text">Vista Cliente</span>
+                        <span class="nav-text">Vista Clínica</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="AdminPanel.logout(); return false;">
+                        <span class="nav-icon">🚪</span>
+                        <span class="nav-text">Cerrar Sesión</span>
                     </a>
                 </div>
             </nav>
@@ -66,18 +70,23 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <div>
                         <h2 id="viewTitle">Panel de Super Administrador</h2>
-                        <p style="color: var(--text-muted); font-size: 0.875rem;">Gestión completa de la plataforma
-                            VetConnect</p>
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Gestión completa de la plataforma VetConnect</p>
                     </div>
-                    <div id="userHeader"></div>
+                    <div id="userHeader" style="display: flex; align-items: center; gap: 1rem;"></div>
                 </div>
             </header>
 
-            <!-- Content Area -->
-            <div class="content" id="mainContent">
-                <div id="viewContent">
-                    <!-- Content will be loaded dynamically -->
+            <!-- Auth guard loading state -->
+            <div id="authLoading" class="content" style="display: flex; align-items: center; justify-content: center; min-height: 60vh;">
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🔐</div>
+                    <p style="color: var(--text-muted);">Verificando acceso...</p>
                 </div>
+            </div>
+
+            <!-- Content Area (hidden until auth passes) -->
+            <div class="content" id="mainContent" style="display: none;">
+                <div id="viewContent"></div>
             </div>
         </div>
     </div>
@@ -85,72 +94,159 @@
     <!-- Notification Container -->
     <div id="notificationContainer"></div>
 
-    <!-- Scripts -->
-    <script src="app.js"></script>
-    <script src="backend/utils/auth-manager.js"></script>
+    <!-- Scripts — order matters -->
+    <script src="config.js"></script>
+    <script src="supabase-client.js"></script>
     <script src="backend/utils/license-manager.js"></script>
-    <script>
-        // Protect this page - require super_admin role
-        window.addEventListener('DOMContentLoaded', async () => {
-            await AuthManager.init();
 
-            if (!AuthManager.hasRole('super_admin')) {
-                alert('Acceso denegado. Solo Super Administradores pueden acceder.');
-                window.location.href = 'login.html';
+    <script>
+    // ─── ADMIN PANEL ─────────────────────────────────────────────────────────
+
+    const AdminPanel = {
+        currentUser: null,
+        stats: {
+            totalClinics: 0,
+            activeTrials: 0,
+            totalClients: 0,
+            totalAppointments: 0
+        },
+
+        // ── AUTH GUARD ───────────────────────────────────────────────────────
+
+        getStoredSession() {
+            try {
+                const key = 'sb-dppxgwjvfiqbgjupxipf-auth-token';
+                const raw = localStorage.getItem(key);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (parsed.expires_at && parsed.expires_at * 1000 < Date.now()) return null;
+                return parsed;
+            } catch { return null; }
+        },
+
+        async init() {
+            // 1. Quick sync check — no session → go to login
+            const stored = this.getStoredSession();
+            if (!stored) {
+                window.location.replace('auth/login.html');
                 return;
             }
 
-            // Load user header
-            document.getElementById('userHeader').innerHTML = AuthManager.getUserHeaderHTML();
+            // 2. Init Supabase and get authenticated user
+            if (typeof initSupabase !== 'undefined') {
+                await initSupabase();
+            }
 
-            // Load initial view
-            loadView('overview');
-        });
+            const { data: { user }, error } = await supabaseClient.auth.getUser();
+            if (error || !user) {
+                window.location.replace('auth/login.html');
+                return;
+            }
 
-        function loadView(view) {
-            // Update active menu item
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            document.querySelector(`[data-view="${view}"]`).classList.add('active');
+            // 3. Check super_admin access:
+            //    Priority: app_metadata.role (set via Supabase service key) → fallback: email allowlist
+            const isSuperAdmin = this.checkSuperAdminAccess(user);
+            if (!isSuperAdmin) {
+                document.getElementById('authLoading').innerHTML = `
+                    <div style="text-align: center; padding: 3rem;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">🚫</div>
+                        <h2 style="margin-bottom: 1rem;">Acceso Denegado</h2>
+                        <p style="color: var(--text-muted); margin-bottom: 2rem;">
+                            Solo Super Administradores pueden acceder a este panel.
+                        </p>
+                        <a href="index.html" class="btn btn-primary">Volver a la App</a>
+                    </div>`;
+                return;
+            }
 
-            // Load view content
+            this.currentUser = user;
+
+            // 4. Render user header
+            document.getElementById('userHeader').innerHTML = `
+                <div style="font-size: 0.875rem; color: var(--text-muted);">
+                    ${user.email}
+                </div>
+                <span class="badge badge-primary">Super Admin</span>`;
+
+            // 5. Show content, load stats and default view
+            document.getElementById('authLoading').style.display = 'none';
+            document.getElementById('mainContent').style.display = '';
+
+            await this.loadStats();
+            this.loadView('overview');
+        },
+
+        checkSuperAdminAccess(user) {
+            // Check Supabase app_metadata (set server-side via Supabase dashboard or service key)
+            if (user.app_metadata && user.app_metadata.role === 'super_admin') return true;
+
+            // Fallback: email allowlist (add super admin emails here)
+            const SUPER_ADMIN_EMAILS = [
+                'lmarotomar130473@gmail.com',
+                'admin@biovetai.org',
+                'vetconnect@biovetai.org'
+            ];
+            return SUPER_ADMIN_EMAILS.includes(user.email);
+        },
+
+        async logout() {
+            await supabaseClient.auth.signOut();
+            window.location.replace('auth/login.html');
+        },
+
+        // ── DATA ─────────────────────────────────────────────────────────────
+
+        async loadStats() {
+            try {
+                const [clientsRes, appointmentsRes] = await Promise.all([
+                    supabaseClient.from('clients').select('id', { count: 'exact', head: true }),
+                    supabaseClient.from('appointments').select('id', { count: 'exact', head: true })
+                ]);
+
+                this.stats.totalClients      = clientsRes.count      || 0;
+                this.stats.totalAppointments = appointmentsRes.count || 0;
+
+                // For multi-tenancy we'd query a clinics/orgs table.
+                // Until that table exists we show what we have.
+                this.stats.totalClinics  = '—';
+                this.stats.activeTrials  = '—';
+            } catch (e) {
+                console.error('AdminPanel.loadStats:', e);
+            }
+        },
+
+        // ── NAVIGATION ───────────────────────────────────────────────────────
+
+        loadView(view) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            const navItem = document.querySelector(`[data-view="${view}"]`);
+            if (navItem) navItem.classList.add('active');
+
             const content = document.getElementById('viewContent');
 
             switch (view) {
-                case 'overview':
-                    content.innerHTML = renderOverview();
-                    break;
-                case 'clinics':
-                    content.innerHTML = renderClinics();
-                    break;
-                case 'users':
-                    content.innerHTML = renderUsers();
-                    break;
-                case 'subscriptions':
-                    content.innerHTML = renderSubscriptions();
-                    break;
-                case 'analytics':
-                    content.innerHTML = renderAnalytics();
-                    break;
-                case 'support':
-                    content.innerHTML = renderSupport();
-                    break;
-                case 'settings':
-                    content.innerHTML = renderSettings();
-                    break;
+                case 'overview':      content.innerHTML = this.renderOverview();      break;
+                case 'clinics':       content.innerHTML = this.renderClinics();       break;
+                case 'users':         content.innerHTML = this.renderUsers();         break;
+                case 'subscriptions': content.innerHTML = this.renderSubscriptions(); break;
+                case 'analytics':     content.innerHTML = this.renderAnalytics();     break;
+                case 'support':       content.innerHTML = this.renderSupport();       break;
+                case 'settings':      content.innerHTML = this.renderSettings();      break;
             }
-        }
+        },
 
-        function renderOverview() {
+        // ── VIEWS ────────────────────────────────────────────────────────────
+
+        renderOverview() {
+            const s = this.stats;
             return `
                 <div class="stats-grid mb-lg">
                     <div class="stat-card">
                         <div class="stat-header">
                             <div>
-                                <div class="stat-label">Total Clínicas</div>
-                                <div class="stat-value">47</div>
-                                <span class="stat-change positive">+5 este mes</span>
+                                <div class="stat-label">Clínicas / Cuentas</div>
+                                <div class="stat-value">${s.totalClinics}</div>
+                                <span class="stat-change" style="color: var(--text-muted); font-size: 0.75rem;">Multi-tenancy próx.</span>
                             </div>
                             <div class="stat-icon">🏥</div>
                         </div>
@@ -159,20 +255,20 @@
                     <div class="stat-card">
                         <div class="stat-header">
                             <div>
-                                <div class="stat-label">MRR (Ingresos Mensuales)</div>
-                                <div class="stat-value">$3,713</div>
-                                <span class="stat-change positive">+23%</span>
+                                <div class="stat-label">Trials Activos</div>
+                                <div class="stat-value">${s.activeTrials}</div>
+                                <span class="stat-change" style="color: var(--text-muted); font-size: 0.75rem;">Tabla orgs próx.</span>
                             </div>
-                            <div class="stat-icon">💰</div>
+                            <div class="stat-icon">🎁</div>
                         </div>
                     </div>
 
                     <div class="stat-card">
                         <div class="stat-header">
                             <div>
-                                <div class="stat-label">Usuarios Activos</div>
-                                <div class="stat-value">234</div>
-                                <span class="stat-change positive">+12%</span>
+                                <div class="stat-label">Clientes Registrados</div>
+                                <div class="stat-value">${s.totalClients}</div>
+                                <span class="stat-change positive">Dato real · Supabase</span>
                             </div>
                             <div class="stat-icon">👥</div>
                         </div>
@@ -181,11 +277,11 @@
                     <div class="stat-card">
                         <div class="stat-header">
                             <div>
-                                <div class="stat-label">Tasa de Conversión</div>
-                                <div class="stat-value">8.5%</div>
-                                <span class="stat-change positive">+1.2%</span>
+                                <div class="stat-label">Citas Totales</div>
+                                <div class="stat-value">${s.totalAppointments}</div>
+                                <span class="stat-change positive">Dato real · Supabase</span>
                             </div>
-                            <div class="stat-icon">📈</div>
+                            <div class="stat-icon">📅</div>
                         </div>
                     </div>
                 </div>
@@ -193,83 +289,73 @@
                 <div class="grid grid-2 mb-lg">
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">Nuevas Clínicas (Última Semana)</h3>
+                            <h3 class="card-title">Planes Activos</h3>
                         </div>
                         <div class="card-body">
-                            <div class="table-container">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Clínica</th>
-                                            <th>Plan</th>
-                                            <th>Fecha</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>Clínica Veterinaria Central</td>
-                                            <td><span class="badge badge-success">Premium</span></td>
-                                            <td>05 Dic 2025</td>
-                                        </tr>
-                                        <tr>
-                                            <td>PetCare Norte</td>
-                                            <td><span class="badge badge-success">Premium</span></td>
-                                            <td>04 Dic 2025</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Hospital Veterinario del Sur</td>
-                                            <td><span class="badge badge-warning">Free</span></td>
-                                            <td>03 Dic 2025</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-glass); border-radius: var(--radius-md);">
+                                    <span>🎁 Trial (14 días)</span>
+                                    <span class="badge badge-info">—</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-glass); border-radius: var(--radius-md);">
+                                    <span>👤 Solo ($39/mes)</span>
+                                    <span class="badge badge-warning">—</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-glass); border-radius: var(--radius-md);">
+                                    <span>🏥 Clínica ($79/mes)</span>
+                                    <span class="badge badge-success">—</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-glass); border-radius: var(--radius-md);">
+                                    <span>🏢 Enterprise ($199+)</span>
+                                    <span class="badge badge-primary">—</span>
+                                </div>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+                                    Los conteos por plan estarán disponibles cuando se implemente la tabla <code>organizations</code>.
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">Métricas de Plataforma</h3>
+                            <h3 class="card-title">Estado de la Plataforma</h3>
                         </div>
                         <div class="card-body">
                             <div style="display: flex; flex-direction: column; gap: 1rem;">
                                 <div>
                                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                        <span>Uptime (30 días)</span>
-                                        <strong>99.8%</strong>
-                                    </div>
-                                    <div style="height: 8px; background: var(--bg-glass); border-radius: 4px; overflow: hidden;">
-                                        <div style="width: 99.8%; height: 100%; background: var(--success-gradient);"></div>
+                                        <span>Supabase DB</span>
+                                        <strong style="color: var(--success);">✅ Conectada</strong>
                                     </div>
                                 </div>
-
                                 <div>
                                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                        <span>Conversión Trial → Premium</span>
-                                        <strong>8.5%</strong>
-                                    </div>
-                                    <div style="height: 8px; background: var(--bg-glass); border-radius: 4px; overflow: hidden;">
-                                        <div style="width: 85%; height: 100%; background: var(--primary-gradient);"></div>
+                                        <span>Auth</span>
+                                        <strong style="color: var(--success);">✅ Activa</strong>
                                     </div>
                                 </div>
-
                                 <div>
                                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                        <span>Retención de Clientes</span>
-                                        <strong>94%</strong>
-                                    </div>
-                                    <div style="height: 8px; background: var(--bg-glass); border-radius: 4px; overflow: hidden;">
-                                        <div style="width: 94%; height: 100%; background: var(--secondary-gradient);"></div>
+                                        <span>Vercel Deploy</span>
+                                        <strong style="color: var(--success);">✅ En línea</strong>
                                     </div>
                                 </div>
-
                                 <div>
                                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                        <span>NPS (Net Promoter Score)</span>
-                                        <strong>72</strong>
+                                        <span>Edge Functions</span>
+                                        <strong style="color: var(--warning);">⚠️ Pendiente deploy</strong>
                                     </div>
-                                    <div style="height: 8px; background: var(--bg-glass); border-radius: 4px; overflow: hidden;">
-                                        <div style="width: 72%; height: 100%; background: var(--success-gradient);"></div>
+                                </div>
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span>Stripe Payments</span>
+                                        <strong style="color: var(--warning);">⚠️ Pendiente integración</strong>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span>WhatsApp / Twilio</span>
+                                        <strong style="color: var(--warning);">⚠️ Pendiente config</strong>
                                     </div>
                                 </div>
                             </div>
@@ -283,47 +369,130 @@
                     </div>
                     <div class="card-body">
                         <div class="grid grid-4">
-                            <button class="btn btn-primary" style="padding: 1rem;" onclick="alert('Función en desarrollo')">
-                                ➕ Nueva Clínica
-                            </button>
-                            <button class="btn btn-secondary" style="padding: 1rem;" onclick="alert('Función en desarrollo')">
-                                💬 Enviar Anuncio
-                            </button>
-                            <button class="btn btn-secondary" style="padding: 1rem;" onclick="alert('Función en desarrollo')">
-                                📊 Generar Reporte
-                            </button>
-                            <button class="btn btn-secondary" style="padding: 1rem;" onclick="alert('Función en desarrollo')">
-                                🔧 Configurar Sistema
-                            </button>
+                            <a href="pricing.html" class="btn btn-secondary" style="padding: 1rem; text-align: center; text-decoration: none;">
+                                💰 Ver Pricing
+                            </a>
+                            <a href="https://dppxgwjvfiqbgjupxipf.supabase.co" target="_blank" class="btn btn-secondary" style="padding: 1rem; text-align: center; text-decoration: none;">
+                                🗄️ Supabase Console
+                            </a>
+                            <a href="https://vercel.com/dashboard" target="_blank" class="btn btn-secondary" style="padding: 1rem; text-align: center; text-decoration: none;">
+                                🚀 Vercel Dashboard
+                            </a>
+                            <a href="mailto:ventas@biovetai.org" class="btn btn-secondary" style="padding: 1rem; text-align: center; text-decoration: none;">
+                                📧 Contacto Ventas
+                            </a>
                         </div>
                     </div>
+                </div>`;
+        },
+
+        renderClinics() {
+            return this._wip('Gestión de Clínicas', '🏥',
+                'Listado de clínicas registradas, plan activo, fecha de alta y estado. Requiere tabla <code>organizations</code> en Supabase.');
+        },
+
+        renderUsers() {
+            return this._wip('Gestión de Usuarios', '👥',
+                'Todos los usuarios registrados en Supabase Auth con su clínica asociada, plan y rol.');
+        },
+
+        renderSubscriptions() {
+            return this._wip('Suscripciones', '💳',
+                'Estado de cada suscripción (Stripe), MRR, churn y renovaciones. Requiere integración Stripe.');
+        },
+
+        renderAnalytics() {
+            return this._wip('Analytics', '📈',
+                'Métricas de uso: citas creadas, conversión Trial→Pago, retención. Requiere eventos de analytics.');
+        },
+
+        renderSupport() {
+            return this._wip('Tickets de Soporte', '🛟',
+                'Gestión de tickets de soporte. Integración con sistema de tickets pendiente.');
+        },
+
+        renderSettings() {
+            return `
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">⚙️ Configuración del Sistema</h3></div>
+                    <div class="card-body">
+                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            <div>
+                                <h4 style="margin-bottom: 0.5rem;">Variables de entorno (Vercel)</h4>
+                                <ul style="color: var(--text-muted); font-size: 0.875rem; line-height: 2;">
+                                    <li><code>VITE_SUPABASE_URL</code> — URL del proyecto Supabase</li>
+                                    <li><code>VITE_SUPABASE_ANON_KEY</code> — Anon key de Supabase</li>
+                                    <li><code>SUPER_ADMIN_EMAIL</code> — Email(s) con acceso a este panel</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 style="margin-bottom: 0.5rem;">Super Admins con acceso actual</h4>
+                                <div style="background: var(--bg-glass); border-radius: var(--radius-md); padding: 1rem; font-size: 0.875rem;">
+                                    <div>lmarotomar130473@gmail.com</div>
+                                    <div>admin@biovetai.org</div>
+                                    <div style="color: var(--text-muted); margin-top: 0.5rem;">
+                                        Para agregar más admins, edita <code>checkSuperAdminAccess()</code> en admin-panel.html
+                                        o configura <code>app_metadata.role = 'super_admin'</code> en Supabase.
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 style="margin-bottom: 0.5rem;">Próximos pasos de producción</h4>
+                                <ul style="color: var(--text-muted); font-size: 0.875rem; line-height: 2;">
+                                    <li>Crear tabla <code>organizations</code> para multi-tenancy</li>
+                                    <li>Integrar Stripe Checkout + webhooks</li>
+                                    <li>Desplegar Edge Functions (process-jobs, send-immediate)</li>
+                                    <li>Configurar Twilio para WhatsApp / SMS</li>
+                                    <li>Agregar RLS policies por organización en todas las tablas</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        },
+
+        // ── HELPER ───────────────────────────────────────────────────────────
+
+        _wip(title, icon, description) {
+            return `
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">${icon} ${title}</h3></div>
+                    <div class="card-body">
+                        <div style="text-align: center; padding: 3rem;">
+                            <div style="font-size: 4rem; margin-bottom: 1rem;">🚧</div>
+                            <h3 style="margin-bottom: 1rem;">Módulo en Desarrollo</h3>
+                            <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto;">
+                                ${description}
+                            </p>
+                        </div>
+                    </div>
+                </div>`;
+        },
+
+        showNotification(title, message, type = 'info') {
+            const container = document.getElementById('notificationContainer');
+            const id = Date.now();
+            const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+            const el = document.createElement('div');
+            el.className = 'notification';
+            el.id = `notif-${id}`;
+            el.innerHTML = `
+                <div class="notification-header">
+                    <span>${icons[type] || icons.info} ${title}</span>
+                    <button class="modal-close" onclick="this.parentElement.parentElement.remove()">✕</button>
                 </div>
-            `;
+                <div class="notification-body">${message}</div>`;
+            container.appendChild(el);
+            setTimeout(() => {
+                const n = document.getElementById(`notif-${id}`);
+                if (n) { n.style.animation = 'slideInRight 0.3s ease reverse'; setTimeout(() => n.remove(), 300); }
+            }, 5000);
         }
+    };
 
-        function renderClinics() {
-            return `<div class="card"><div class="card-header"><h3>Gestión de Clínicas</h3></div><div class="card-body"><p>Módulo en desarrollo...</p></div></div>`;
-        }
+    // ── BOOT ─────────────────────────────────────────────────────────────────
 
-        function renderUsers() {
-            return `<div class="card"><div class="card-header"><h3>Gestión de Usuarios</h3></div><div class="card-body"><p>Módulo en desarrollo...</p></div></div>`;
-        }
-
-        function renderSubscriptions() {
-            return `<div class="card"><div class="card-header"><h3>Gestión de Suscripciones</h3></div><div class="card-body"><p>Módulo en desarrollo...</p></div></div>`;
-        }
-
-        function renderAnalytics() {
-            return `<div class="card"><div class="card-header"><h3>Analytics Avanzado</h3></div><div class="card-body"><p>Módulo en desarrollo... </p></div></div>`;
-        }
-
-        function renderSupport() {
-            return `<div class="card"><div class="card-header"><h3>Tickets de Soporte</h3></div><div class="card-body"><p>Módulo en desarrollo...</p></div></div>`;
-        }
-
-        function renderSettings() {
-            return `<div class="card"><div class="card-header"><h3>Configuración de Sistema</h3></div><div class="card-body"><p>Módulo en desarrollo...</p></div></div>`;
-        }
+    window.addEventListener('DOMContentLoaded', () => AdminPanel.init());
     </script>
 </body>
 

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VetConnect - Planes y Precios</title>
-    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="styles.css">
     <style>
         .pricing-hero {
             text-align: center;
@@ -30,11 +30,42 @@
             margin: 2rem 0;
         }
 
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 30px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px; width: 22px;
+            left: 3px; bottom: 3px;
+            background: var(--brand-green);
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        input:checked + .toggle-slider:before { transform: translateX(30px); }
+
         .pricing-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 2rem;
-            max-width: 1200px;
+            max-width: 1100px;
             margin: 3rem auto;
             padding: 0 2rem;
         }
@@ -50,28 +81,30 @@
         }
 
         .pricing-card:hover {
-            transform: translateY(-8px);
-            border-color: var(--accent-purple);
-            box-shadow: 0 12px 48px rgba(102, 126, 234, 0.3);
+            transform: translateY(-6px);
+            box-shadow: 0 12px 48px rgba(102, 126, 234, 0.2);
         }
 
         .pricing-card.featured {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-            border: 2px solid var(--accent-purple);
-            transform: scale(1.05);
+            background: linear-gradient(135deg, rgba(64, 224, 208, 0.08) 0%, rgba(102, 126, 234, 0.08) 100%);
+            border: 2px solid var(--brand-green);
+            transform: scale(1.03);
         }
+
+        .pricing-card.featured:hover { transform: scale(1.03) translateY(-6px); }
 
         .pricing-badge {
             position: absolute;
             top: -15px;
-            right: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             background: var(--primary-gradient);
             color: white;
-            padding: 0.5rem 1.5rem;
+            padding: 0.4rem 1.5rem;
             border-radius: 50px;
             font-weight: 600;
-            font-size: 0.875rem;
-            box-shadow: var(--shadow-lg);
+            font-size: 0.8rem;
+            white-space: nowrap;
         }
 
         .pricing-header {
@@ -81,11 +114,8 @@
             border-bottom: 1px solid var(--border-glass);
         }
 
-        .plan-name {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
+        .plan-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+        .plan-name { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; }
 
         .plan-price {
             font-size: 3.5rem;
@@ -93,56 +123,34 @@
             font-family: var(--font-heading);
             color: var(--text-primary);
             line-height: 1;
-            margin: 1rem 0;
+            margin: 1rem 0 0.25rem;
         }
 
-        .plan-price small {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            font-weight: 400;
-        }
+        .plan-price small { font-size: 1.1rem; color: var(--text-muted); font-weight: 400; }
+        .plan-price-note { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .plan-description { color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.75rem; }
 
-        .plan-description {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-        }
-
-        .feature-list {
-            list-style: none;
-            padding: 0;
-            margin: 2rem 0;
-        }
+        .feature-list { list-style: none; padding: 0; margin: 1.5rem 0; }
 
         .feature-list li {
-            padding: 0.75rem 0;
+            padding: 0.6rem 0;
             display: flex;
             align-items: flex-start;
             gap: 0.75rem;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
         }
 
-        .feature-list li::before {
-            content: '✓';
-            color: var(--accent-teal);
-            font-weight: 700;
-            font-size: 1.25rem;
-            flex-shrink: 0;
-        }
+        .feature-list li:last-child { border-bottom: none; }
 
-        .feature-list li.disabled {
-            color: var(--text-muted);
-            opacity: 0.5;
-        }
-
-        .feature-list li.disabled::before {
-            content: '✕';
-            color: var(--text-muted);
-        }
+        .feature-list li .check { color: var(--brand-green); font-weight: 700; flex-shrink: 0; }
+        .feature-list li .cross { color: var(--text-muted); flex-shrink: 0; }
+        .feature-list li.section-title { font-weight: 600; color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; padding-top: 1rem; }
 
         .cta-button {
             width: 100%;
             padding: 1rem;
-            font-size: 1.125rem;
+            font-size: 1rem;
             font-weight: 600;
             border-radius: var(--radius-md);
             border: none;
@@ -157,10 +165,7 @@
             box-shadow: var(--shadow-md);
         }
 
-        .cta-button.primary:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-glow);
-        }
+        .cta-button.primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-glow); }
 
         .cta-button.secondary {
             background: var(--bg-secondary);
@@ -168,8 +173,18 @@
             color: var(--text-primary);
         }
 
+        .cta-button.secondary:hover { border-color: var(--brand-green); }
+
+        .annual-savings {
+            display: none;
+            font-size: 0.75rem;
+            color: var(--brand-green);
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+
         .comparison-section {
-            max-width: 1200px;
+            max-width: 1100px;
             margin: 5rem auto;
             padding: 0 2rem;
         }
@@ -185,311 +200,293 @@
             border-radius: var(--radius-lg);
             padding: 1.5rem;
             margin-bottom: 1rem;
+            border: 1px solid var(--border-glass);
         }
 
-        .faq-question {
-            font-weight: 600;
-            font-size: 1.125rem;
-            margin-bottom: 0.75rem;
-        }
+        .faq-question { font-weight: 600; font-size: 1rem; margin-bottom: 0.75rem; }
+        .faq-answer { color: var(--text-secondary); line-height: 1.6; font-size: 0.9rem; }
 
-        .faq-answer {
-            color: var(--text-secondary);
-            line-height: 1.6;
+        .trial-banner {
+            background: linear-gradient(135deg, rgba(64, 224, 208, 0.1), rgba(102, 126, 234, 0.1));
+            border: 1px solid var(--brand-green);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem 2rem;
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 2rem;
         }
     </style>
 </head>
 
 <body>
     <div style="min-height: 100vh; background: var(--bg-primary);">
-        <!-- Back to App Button -->
-        <div style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 1000;">
-            <a href="index.html" class="btn btn-primary"
-                style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.75rem 1.5rem; box-shadow: var(--shadow-lg);">
-                <span>←</span>
-                <span>Volver a la App</span>
+
+        <!-- Back Button -->
+        <div style="position: fixed; top: 1.5rem; left: 1.5rem; z-index: 1000;">
+            <a href="index.html" class="btn btn-secondary"
+                style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.6rem 1.25rem;">
+                ← Volver
             </a>
         </div>
 
-        <!-- Hero Section -->
+        <!-- Hero -->
         <section class="pricing-hero">
-            <h1>Elige el Plan Perfecto para tu Clínica</h1>
-            <p style="font-size: 1.25rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto;">
-                Comienza gratis o desbloquea todo el poder de la automatización
+            <h1>Planes VetConnect</h1>
+            <p style="font-size: 1.2rem; color: var(--text-secondary); max-width: 560px; margin: 0 auto 1.5rem;">
+                Automatiza tu clínica, ahorra tiempo y mejora la experiencia de tus clientes
             </p>
 
+            <div class="trial-banner">
+                <strong style="color: var(--brand-green);">🎁 14 días gratis</strong>
+                <span style="color: var(--text-secondary);"> — Prueba Premium completo sin tarjeta de crédito</span>
+            </div>
+
             <div class="pricing-toggle">
-                <span>Mensual</span>
-                <label style="position: relative; display: inline-block; width: 60px; height: 30px;">
-                    <input type="checkbox" id="billingToggle" style="opacity: 0; width: 0; height: 0;">
-                    <span
-                        style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-glass); border-radius: 30px; transition: 0.3s;"></span>
+                <span style="color: var(--text-secondary);">Mensual</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="billingToggle" onchange="toggleBilling()">
+                    <span class="toggle-slider"></span>
                 </label>
-                <span>Anual <span class="badge badge-success">Ahorra 17%</span></span>
+                <span style="color: var(--text-secondary);">Anual <span class="badge badge-success" style="margin-left: 0.25rem;">2 meses gratis</span></span>
             </div>
         </section>
 
         <!-- Pricing Cards -->
         <div class="pricing-cards">
-            <!-- FREE Plan -->
+
+            <!-- SOLO Plan -->
             <div class="pricing-card">
                 <div class="pricing-header">
-                    <div style="font-size: 3rem; margin-bottom: 1rem; color: var(--brand-gold);">FREE</div>
-                    <div class="plan-name">VetConnect Free</div>
+                    <div class="plan-icon">🩺</div>
+                    <div class="plan-name">Solo</div>
                     <div class="plan-price">
-                        $0
+                        <span class="price-monthly">$39</span>
+                        <span class="price-annual" style="display:none;">$32</span>
                         <small>/mes</small>
                     </div>
-                    <div class="plan-description">
-                        Perfecto para empezar a organizar tu clínica
-                    </div>
+                    <div class="annual-savings" id="savings-solo">Pagas $390/año — ahorras $78</div>
+                    <div class="plan-description">Para el veterinario independiente que quiere organizarse y automatizar</div>
                 </div>
 
                 <ul class="feature-list">
-                    <li>Hasta 50 citas por mes</li>
-                    <li>Hasta 25 clientes</li>
-                    <li>1 usuario/veterinario</li>
-                    <li>Dashboard básico</li>
-                    <li>Gestión de citas manual</li>
-                    <li>Historias clínicas básicas</li>
-                    <li class="disabled">Automatizaciones</li>
-                    <li class="disabled">Integraciones (WhatsApp, CRM)</li>
-                    <li class="disabled">Reportes avanzados</li>
-                    <li class="disabled">Soporte prioritario</li>
+                    <li class="section-title">Límites</li>
+                    <li><span class="check">✓</span> 1 veterinario principal</li>
+                    <li><span class="check">✓</span> Hasta 3 usuarios en total</li>
+                    <li><span class="check">✓</span> 20 citas por mes</li>
+                    <li><span class="check">✓</span> 10 clientes</li>
+                    <li class="section-title">Funciones</li>
+                    <li><span class="check">✓</span> Dashboard y gestión de citas</li>
+                    <li><span class="check">✓</span> Historias clínicas</li>
+                    <li><span class="check">✓</span> Inventario básico</li>
+                    <li><span class="check">✓</span> Confirmaciones automáticas WhatsApp</li>
+                    <li><span class="check">✓</span> Recordatorios (24h y 2h antes)</li>
+                    <li><span class="cross">✕</span> Múltiples veterinarios</li>
+                    <li><span class="cross">✕</span> Reportes avanzados</li>
+                    <li><span class="cross">✕</span> Soporte prioritario</li>
                 </ul>
 
-                <button class="cta-button secondary" onclick="window.location.href='../index.html'">
-                    Comenzar Gratis
+                <button class="cta-button primary" onclick="startTrial('solo')">
+                    Probar 14 días gratis
                 </button>
-                <p style="text-align: center; font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem;">
-                    Sin tarjeta de crédito
+                <p style="text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:0.75rem;">
+                    Sin tarjeta. Luego $39/mes.
                 </p>
             </div>
 
-            <!-- PREMIUM Plan -->
+            <!-- CLÍNICA Plan (featured) -->
             <div class="pricing-card featured">
                 <div class="pricing-badge">🔥 Más Popular</div>
 
                 <div class="pricing-header">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">💎</div>
-                    <div class="plan-name">VetConnect Premium</div>
+                    <div class="plan-icon">🏥</div>
+                    <div class="plan-name">Clínica</div>
                     <div class="plan-price">
-                        $79
+                        <span class="price-monthly">$79</span>
+                        <span class="price-annual" style="display:none;">$66</span>
                         <small>/mes</small>
                     </div>
-                    <div class="plan-description">
-                        Automatización completa para clínicas profesionales
-                    </div>
+                    <div class="annual-savings" id="savings-clinic">Pagas $790/año — ahorras $158</div>
+                    <div class="plan-price-note">+ $15/mes por cada veterinario adicional (más de 5)</div>
+                    <div class="plan-description">Para clínicas con equipo — todo ilimitado desde el día uno</div>
                 </div>
 
                 <ul class="feature-list">
-                    <li><strong>Todo de FREE, más:</strong></li>
-                    <li>✨ Citas ilimitadas</li>
-                    <li>✨ Clientes ilimitados</li>
-                    <li>✨ Usuarios ilimitados</li>
-                    <li><strong>🤖 Automatizaciones completas:</strong></li>
-                    <li>• Confirmaciones automáticas</li>
-                    <li>• Recordatorios (24h y 2h)</li>
-                    <li>• Triage automático</li>
-                    <li>• Seguimientos programados</li>
-                    <li><strong>🔗 Todas las integraciones:</strong></li>
-                    <li>• WhatsApp Business API</li>
-                    <li>• Twilio SMS</li>
-                    <li>• SendGrid Email</li>
-                    <li>• HubSpot CRM</li>
-                    <li>• Google Calendar & Sheets</li>
-                    <li>📊 Reportes avanzados</li>
-                    <li>📄 Exportación PDF y Excel</li>
-                    <li>☁️ Backup automático en la nube</li>
-                    <li>🛟 Soporte prioritario 24/7</li>
+                    <li class="section-title">Límites</li>
+                    <li><span class="check">✓</span> 5 veterinarios incluidos</li>
+                    <li><span class="check">✓</span> Usuarios ilimitados</li>
+                    <li><span class="check">✓</span> Citas ilimitadas</li>
+                    <li><span class="check">✓</span> Clientes ilimitados</li>
+                    <li class="section-title">Todo de Solo, más:</li>
+                    <li><span class="check">✓</span> Multi-veterinario y multi-usuario</li>
+                    <li><span class="check">✓</span> Seguimientos post-consulta</li>
+                    <li><span class="check">✓</span> Recordatorios de vacunación</li>
+                    <li><span class="check">✓</span> Reportes avanzados y exportación</li>
+                    <li><span class="check">✓</span> Facturación e inventario completo</li>
+                    <li><span class="check">✓</span> Backup automático en la nube</li>
+                    <li><span class="check">✓</span> Soporte prioritario</li>
                 </ul>
 
-                <button class="cta-button primary" onclick="alert('Redirigiendo a Stripe Checkout...')">
-                    🎁 Probar Gratis 14 Días
+                <button class="cta-button primary" onclick="startTrial('clinica')">
+                    Probar 14 días gratis
                 </button>
-                <p style="text-align: center; font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem;">
-                    Luego $79/mes. Cancela cuando quieras.
+                <p style="text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:0.75rem;">
+                    Sin tarjeta. Luego $79/mes.
                 </p>
             </div>
 
             <!-- ENTERPRISE Plan -->
             <div class="pricing-card">
                 <div class="pricing-header">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">🏢</div>
+                    <div class="plan-icon">🏢</div>
                     <div class="plan-name">Enterprise</div>
                     <div class="plan-price">
-                        Personalizado
+                        Desde <span style="font-size:2rem;">$199</span>
+                        <small>/mes</small>
                     </div>
-                    <div class="plan-description">
-                        Para redes de clínicas y organizaciones grandes
-                    </div>
+                    <div class="plan-description">Para hospitales, redes de clínicas y grupos corporativos</div>
                 </div>
 
                 <ul class="feature-list">
-                    <li><strong>Todo de PREMIUM, más:</strong></li>
-                    <li>🏥 Múltiples clínicas</li>
-                    <li>🔧 API personalizada</li>
-                    <li>🎨 Branding personalizado</li>
-                    <li>🔐 SSO y seguridad avanzada</li>
-                    <li>📞 Account manager dedicado</li>
-                    <li>🎓 Onboarding personalizado</li>
-                    <li>📊 Reportes custom</li>
-                    <li>⚡ SLA garantizado</li>
-                    <li>🔗 Integraciones a medida</li>
+                    <li class="section-title">Todo de Clínica, más:</li>
+                    <li><span class="check">✓</span> Múltiples sedes / clínicas</li>
+                    <li><span class="check">✓</span> Panel de administración centralizado</li>
+                    <li><span class="check">✓</span> White-label (tu marca)</li>
+                    <li><span class="check">✓</span> API personalizada</li>
+                    <li><span class="check">✓</span> SSO y seguridad avanzada</li>
+                    <li><span class="check">✓</span> Onboarding personalizado</li>
+                    <li><span class="check">✓</span> Account manager dedicado</li>
+                    <li><span class="check">✓</span> SLA garantizado</li>
+                    <li><span class="check">✓</span> Reportes a medida</li>
+                    <li><span class="check">✓</span> Integraciones personalizadas</li>
                 </ul>
 
-                <button class="cta-button secondary" onclick="alert('Contactar ventas...')">
+                <button class="cta-button secondary" onclick="contactSales()">
                     Contactar Ventas
                 </button>
+                <p style="text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:0.75rem;">
+                    Precio según número de sedes y usuarios
+                </p>
             </div>
         </div>
 
         <!-- Comparison Table -->
         <section class="comparison-section">
-            <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 3rem; font-family: var(--font-heading);">
+            <h2 style="text-align:center; font-size:2rem; margin-bottom:2.5rem; font-family:var(--font-heading);">
                 Comparación Detallada
             </h2>
-
             <div class="card">
                 <div class="table-container">
                     <table class="table">
                         <thead>
                             <tr>
                                 <th>Característica</th>
-                                <th style="text-align: center;">Free</th>
-                                <th style="text-align: center;">Premium</th>
-                                <th style="text-align: center;">Enterprise</th>
+                                <th style="text-align:center;">Solo<br><small>$39/mes</small></th>
+                                <th style="text-align:center; color:var(--brand-green);">Clínica<br><small>$79/mes</small></th>
+                                <th style="text-align:center;">Enterprise<br><small>Desde $199</small></th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td><strong>Citas por mes</strong></td>
-                                <td style="text-align: center;">50</td>
-                                <td style="text-align: center;">Ilimitadas</td>
-                                <td style="text-align: center;">Ilimitadas</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Clientes</strong></td>
-                                <td style="text-align: center;">25</td>
-                                <td style="text-align: center;">Ilimitados</td>
-                                <td style="text-align: center;">Ilimitados</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Usuarios</strong></td>
-                                <td style="text-align: center;">1</td>
-                                <td style="text-align: center;">Ilimitados</td>
-                                <td style="text-align: center;">Ilimitados</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Automatizaciones</strong></td>
-                                <td style="text-align: center;">✕</td>
-                                <td style="text-align: center;">✓</td>
-                                <td style="text-align: center;">✓</td>
-                            </tr>
-                            <tr>
-                                <td><strong>WhatsApp/SMS</strong></td>
-                                <td style="text-align: center;">✕</td>
-                                <td style="text-align: center;">✓</td>
-                                <td style="text-align: center;">✓</td>
-                            </tr>
-                            <tr>
-                                <td><strong>HubSpot CRM</strong></td>
-                                <td style="text-align: center;">✕</td>
-                                <td style="text-align: center;">✓</td>
-                                <td style="text-align: center;">✓</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Reportes Avanzados</strong></td>
-                                <td style="text-align: center;">✕</td>
-                                <td style="text-align: center;">✓</td>
-                                <td style="text-align: center;">✓</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Múltiples clínicas</strong></td>
-                                <td style="text-align: center;">✕</td>
-                                <td style="text-align: center;">✕</td>
-                                <td style="text-align: center;">✓</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Soporte</strong></td>
-                                <td style="text-align: center;">Email</td>
-                                <td style="text-align: center;">24/7 Prioritario</td>
-                                <td style="text-align: center;">Dedicado</td>
-                            </tr>
+                            <tr><td><strong>Veterinarios</strong></td><td style="text-align:center;">1</td><td style="text-align:center;">5 incluidos</td><td style="text-align:center;">Ilimitados</td></tr>
+                            <tr><td><strong>Usuarios totales</strong></td><td style="text-align:center;">3</td><td style="text-align:center;">Ilimitados</td><td style="text-align:center;">Ilimitados</td></tr>
+                            <tr><td><strong>Citas/mes</strong></td><td style="text-align:center;">20</td><td style="text-align:center;">Ilimitadas</td><td style="text-align:center;">Ilimitadas</td></tr>
+                            <tr><td><strong>Clientes</strong></td><td style="text-align:center;">10</td><td style="text-align:center;">Ilimitados</td><td style="text-align:center;">Ilimitados</td></tr>
+                            <tr><td><strong>WhatsApp automático</strong></td><td style="text-align:center;">✓</td><td style="text-align:center;">✓</td><td style="text-align:center;">✓</td></tr>
+                            <tr><td><strong>Recordatorios</strong></td><td style="text-align:center;">✓</td><td style="text-align:center;">✓</td><td style="text-align:center;">✓</td></tr>
+                            <tr><td><strong>Seguimientos post-consulta</strong></td><td style="text-align:center;">✕</td><td style="text-align:center;">✓</td><td style="text-align:center;">✓</td></tr>
+                            <tr><td><strong>Reportes avanzados</strong></td><td style="text-align:center;">✕</td><td style="text-align:center;">✓</td><td style="text-align:center;">✓</td></tr>
+                            <tr><td><strong>Exportación PDF/Excel</strong></td><td style="text-align:center;">✕</td><td style="text-align:center;">✓</td><td style="text-align:center;">✓</td></tr>
+                            <tr><td><strong>Múltiples sedes</strong></td><td style="text-align:center;">✕</td><td style="text-align:center;">✕</td><td style="text-align:center;">✓</td></tr>
+                            <tr><td><strong>White-label</strong></td><td style="text-align:center;">✕</td><td style="text-align:center;">✕</td><td style="text-align:center;">✓</td></tr>
+                            <tr><td><strong>Soporte</strong></td><td style="text-align:center;">Email</td><td style="text-align:center;">Prioritario</td><td style="text-align:center;">Dedicado + SLA</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- FAQ Section -->
+        <!-- FAQ -->
         <section class="faq-section">
-            <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 3rem; font-family: var(--font-heading);">
+            <h2 style="text-align:center; font-size:2rem; margin-bottom:2.5rem; font-family:var(--font-heading);">
                 Preguntas Frecuentes
             </h2>
 
             <div class="faq-item">
-                <div class="faq-question">¿Puedo cambiar de plan en cualquier momento?</div>
-                <div class="faq-answer">
-                    Sí, puedes actualizar o degradar tu plan en cualquier momento. Los cambios se aplican
-                    inmediatamente.
-                </div>
+                <div class="faq-question">¿Necesito tarjeta de crédito para el trial?</div>
+                <div class="faq-answer">No. Los 14 días de prueba son completamente gratuitos y sin compromiso. Solo se solicita pago al finalizar el período de prueba.</div>
             </div>
 
             <div class="faq-item">
-                <div class="faq-question">¿Qué incluye el trial de 14 días?</div>
-                <div class="faq-answer">
-                    Acceso completo a todas las características Premium sin restricciones. No se requiere tarjeta de
-                    crédito.
-                </div>
+                <div class="faq-question">¿Qué pasa al terminar el trial?</div>
+                <div class="faq-answer">Tu cuenta pasa a modo inactivo hasta que elijas un plan. Tus datos se conservan por 30 días. Puedes reactivar en cualquier momento.</div>
             </div>
 
             <div class="faq-item">
-                <div class="faq-question">¿Qué pasa con mis datos si cancelo?</div>
-                <div class="faq-answer">
-                    Puedes exportar todos tus datos antes de cancelar. Los datos se conservan por 30 días después de la
-                    cancelación.
-                </div>
+                <div class="faq-question">¿Puedo cambiar de plan?</div>
+                <div class="faq-answer">Sí, en cualquier momento. Si subes de Solo a Clínica, se aplica el nuevo precio desde el siguiente ciclo de facturación.</div>
             </div>
 
             <div class="faq-item">
-                <div class="faq-question">¿Los precios incluyen las integraciones externas?</div>
-                <div class="faq-answer">
-                    VetConnect Premium incluye la funcionalidad de integración. Los costos de servicios externos
-                    (WhatsApp
-                    Business API, Twilio, etc.) se facturan directamente por esos proveedores según su uso.
-                </div>
+                <div class="faq-question">¿El costo de WhatsApp Business está incluido?</div>
+                <div class="faq-answer">VetConnect incluye la infraestructura de automatización. Los costos de mensajes de WhatsApp Business API se facturan directamente por Meta según el volumen de mensajes enviados.</div>
             </div>
 
             <div class="faq-item">
                 <div class="faq-question">¿Ofrecen descuentos para múltiples clínicas?</div>
-                <div class="faq-answer">
-                    Sí, nuestro plan Enterprise ofrece precios personalizados para redes de clínicas. Contáctanos para
-                    una cotización.
-                </div>
+                <div class="faq-answer">Sí, el plan Enterprise incluye precios personalizados para redes de clínicas y grupos corporativos. Contáctanos para una propuesta.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">¿Los precios son en dólares americanos?</div>
+                <div class="faq-answer">Sí, todos los precios están en USD. Aceptamos tarjetas de crédito/débito internacionales a través de Stripe.</div>
             </div>
         </section>
 
-        <!-- CTA Section -->
-        <section style="text-align: center; padding: 5rem 2rem; background: var(--bg-secondary); margin-top: 5rem;">
-            <h2 style="font-size: 2.5rem; margin-bottom: 1rem; font-family: var(--font-heading);">
+        <!-- CTA Bottom -->
+        <section style="text-align:center; padding:5rem 2rem; background:var(--bg-secondary); margin-top:5rem;">
+            <h2 style="font-size:2rem; margin-bottom:1rem; font-family:var(--font-heading);">
                 ¿Listo para automatizar tu clínica?
             </h2>
-            <p style="font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 2rem;">
-                Únete a cientos de veterinarios que ahorran 15+ horas semanales con VetConnect
+            <p style="font-size:1.1rem; color:var(--text-secondary); margin-bottom:2rem; max-width:500px; margin-left:auto; margin-right:auto;">
+                Comienza tu prueba gratuita de 14 días y descubre cómo VetConnect transforma tu práctica veterinaria.
             </p>
-            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                <button class="btn btn-primary" style="font-size: 1.125rem; padding: 1rem 2rem;"
-                    onclick="alert('Iniciando trial...')">
+            <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                <button class="btn btn-primary" style="font-size:1rem; padding:1rem 2rem;" onclick="startTrial('clinica')">
                     🎁 Probar Gratis 14 Días
                 </button>
-                <button class="btn btn-secondary" style="font-size: 1.125rem; padding: 1rem 2rem;"
-                    onclick="window.location.href='../index.html'">
-                    Ver Demo
+                <button class="btn btn-secondary" style="font-size:1rem; padding:1rem 2rem;" onclick="contactSales()">
+                    Hablar con Ventas
                 </button>
             </div>
         </section>
     </div>
+
+    <script>
+        let isAnnual = false;
+
+        function toggleBilling() {
+            isAnnual = document.getElementById('billingToggle').checked;
+
+            document.querySelectorAll('.price-monthly').forEach(el => {
+                el.style.display = isAnnual ? 'none' : 'inline';
+            });
+            document.querySelectorAll('.price-annual').forEach(el => {
+                el.style.display = isAnnual ? 'inline' : 'none';
+            });
+            document.querySelectorAll('.annual-savings').forEach(el => {
+                el.style.display = isAnnual ? 'block' : 'none';
+            });
+        }
+
+        function startTrial(plan) {
+            // TODO: Connect to Stripe — redirect to checkout with trial
+            const returnUrl = encodeURIComponent(window.location.origin + '/index.html');
+            window.location.href = `auth/register.html?plan=${plan}&trial=14`;
+        }
+
+        function contactSales() {
+            window.location.href = 'mailto:ventas@biovetai.org?subject=VetConnect Enterprise - Consulta&body=Hola, me interesa conocer más sobre el plan Enterprise de VetConnect.';
+        }
+    </script>
 </body>
 
 </html>

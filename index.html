@@ -318,28 +318,12 @@
         // Handle Logout
         async function handleLogout() {
             if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                // Check if using Supabase auth
-                if (typeof Auth !== 'undefined' && Auth.isAuthenticated()) {
-                    try {
-                        await Auth.signOut();
-                    } catch (error) {
-                        console.error('Logout error:', error);
-                    }
+                try {
+                    await supabaseClient.auth.signOut();
+                } catch (error) {
+                    console.error('Logout error:', error);
                 }
-
-                // Clear demo mode
-                localStorage.removeItem('biovetai_demo_mode');
-                localStorage.removeItem('biovetai_demo_user');
-                localStorage.removeItem('vetconnect_session');
-
-                if (typeof App !== 'undefined') {
-                    App.showNotification('Sesión Cerrada', 'Has cerrado sesión correctamente', 'success');
-                }
-
-                // Redirect to login after short delay
-                setTimeout(() => {
-                    window.location.href = 'auth/login.html';
-                }, 1000);
+                window.location.replace('auth/login.html');
             }
         }
 
