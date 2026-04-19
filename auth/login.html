@@ -233,13 +233,18 @@
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwcHhnd2p2ZmlxYmdqdXB4aXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4ODE4MDksImV4cCI6MjA4MjQ1NzgwOX0.zBDqyWejXCkqeQ-9FqRIHg2QEeppwAgTGymZ_m3DLEc'
         );
 
-        // Check if already logged in — only redirect if not coming FROM index (prevents loop)
-        async function checkSession() {
+        // Check if already logged in using the same sync localStorage read as index.html auth guard.
+        // Avoids getSession() which can auto-refresh and create a loop after logout.
+        function checkSession() {
             if (sessionStorage.getItem('vc_auth_redirect')) return;
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) {
+            try {
+                const key = 'sb-dppxgwjvfiqbgjupxipf-auth-token';
+                const raw = localStorage.getItem(key);
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (parsed.expires_at && parsed.expires_at * 1000 < Date.now()) return;
                 window.location.replace('../index.html');
-            }
+            } catch { return; }
         }
         checkSession();
 

@@ -323,6 +323,8 @@
                 } catch (error) {
                     console.error('Logout error:', error);
                 }
+                // Belt-and-suspenders: clear token directly so login.html sync check sees nothing
+                localStorage.removeItem('sb-dppxgwjvfiqbgjupxipf-auth-token');
                 window.location.replace('auth/login.html');
             }
         }
