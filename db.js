@@ -210,6 +210,17 @@ const DB = {
         return data;
     },
 
+    // ─── INVENTORY ────────────────────────────────────────────────────────────
+
+    async getInventory() {
+        const { data, error } = await supabase
+            .from('inventory_items')
+            .select('*')
+            .order('name');
+        if (error) console.error('DB.getInventory:', error.message);
+        return data || [];
+    },
+
     async addScheduledJob(job) {
         const { data, error } = await supabase
             .from('scheduled_jobs')

@@ -8,6 +8,7 @@ const App = {
         appointments: [],
         clinicalRecords: [],
         communications: [],
+        inventory: [],
         educationalContent: [
             { id: 1, title: 'Cuidados Post-Vacunación', category: 'Vacunación', content: 'Instrucciones para después de la vacunación...' },
             { id: 2, title: 'Alimentación Saludable para Perros', category: 'Nutrición', content: 'Guía completa de nutrición canina...' }
@@ -24,16 +25,18 @@ const App = {
     async loadData() {
         if (typeof DB === 'undefined') return;
         try {
-            const [clients, appointments, records, comms] = await Promise.all([
+            const [clients, appointments, records, comms, inventory] = await Promise.all([
                 DB.getClients(),
                 DB.getAppointments(),
                 DB.getClinicalRecords(),
-                DB.getCommunications()
+                DB.getCommunications(),
+                DB.getInventory()
             ]);
-            this.data.clients      = clients      || [];
-            this.data.appointments = appointments || [];
-            this.data.clinicalRecords = records   || [];
-            this.data.communications  = comms     || [];
+            this.data.clients         = clients    || [];
+            this.data.appointments    = appointments || [];
+            this.data.clinicalRecords = records    || [];
+            this.data.communications  = comms      || [];
+            this.data.inventory       = inventory  || [];
         } catch (e) {
             console.error('Error loading data from Supabase:', e);
         }

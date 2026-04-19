@@ -412,53 +412,10 @@ const Inventory = {
   },
 
   getProducts() {
-    return [
-      {
-        id: 1,
-        name: 'Ivermectina 1% - 50ml',
-        category: 'medication',
-        sku: 'MED-001',
-        current_stock: 15,
-        min_stock: 10,
-        max_stock: 50,
-        unit: 'bottle',
-        cost_price: 45.00,
-        sale_price: 75.00,
-        expiration_date: '2025-12-31',
-        batch_number: 'LOT-2024-A',
-        is_active: true
-      },
-      {
-        id: 2,
-        name: 'Vacuna Antirrábica',
-        category: 'vaccine',
-        sku: 'VAC-001',
-        current_stock: 5,
-        min_stock: 10,
-        max_stock: 30,
-        unit: 'unit',
-        cost_price: 25.00,
-        sale_price: 45.00,
-        expiration_date: '2025-06-15',
-        batch_number: 'VAC-2024-12',
-        is_active: true
-      },
-      {
-        id: 3,
-        name: 'Hill\'s Prescription Diet',
-        category: 'food',
-        sku: 'FOOD-001',
-        current_stock: 25,
-        min_stock: 10,
-        max_stock: 50,
-        unit: 'kg',
-        cost_price: 85.00,
-        sale_price: 125.00,
-        expiration_date: null,
-        batch_number: null,
-        is_active: true
-      }
-    ];
+    if (typeof App !== 'undefined' && App.data && App.data.inventory) {
+      return App.data.inventory;
+    }
+    return [];
   },
 
   formatDate(dateString) {
