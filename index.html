@@ -386,9 +386,16 @@
         function updateUserDisplay(user) {
             if (!user) return;
 
+            const ROLE_LABELS = {
+                'super_admin':  'Super Admin',
+                'clinic_admin': 'Administrador',
+                'veterinarian': 'Veterinario',
+                'receptionist': 'Recepcionista'
+            };
+
             const initial = (user.name || user.email || 'U').charAt(0).toUpperCase();
             const displayName = user.name || user.email?.split('@')[0] || 'Usuario';
-            const role = user.role ? (ROLE_LABELS?.[user.role] || user.role) : 'Usuario';
+            const role = ROLE_LABELS[user.role] || user.role || 'Administrador';
 
             document.getElementById('userNameDisplay').textContent = displayName.split(' ')[0];
             document.getElementById('dropdownUserName').textContent = displayName;
