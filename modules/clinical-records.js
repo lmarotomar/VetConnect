@@ -248,23 +248,194 @@ const ClinicalRecords = {
 
     // ─── NUEVA NOTA CLÍNICA ───────────────────────────────────────
 
+    // ─── LAB CONFIGURATION ───────────────────────────────────────
+
+    labConfig: {
+        'Hemograma completo': {
+            icon: '🩸',
+            fields: [
+                { id: 'eritrocitos',  label: 'Eritrocitos',  unit: '×10⁶/µL', ref: '5.5–8.5' },
+                { id: 'leucocitos',   label: 'Leucocitos',   unit: '×10³/µL', ref: '6–17' },
+                { id: 'hematocrito',  label: 'Hematocrito',  unit: '%',        ref: '37–55' },
+                { id: 'hemoglobina',  label: 'Hemoglobina',  unit: 'g/dL',     ref: '12–18' },
+                { id: 'plaquetas',    label: 'Plaquetas',    unit: '×10³/µL',  ref: '200–500' },
+                { id: 'hem_interp',   label: 'Interpretación', unit: '', ref: '', wide: true }
+            ]
+        },
+        'Bioquímica sérica': {
+            icon: '🧪',
+            fields: [
+                { id: 'alt',          label: 'ALT/GPT',      unit: 'U/L',    ref: '10–100' },
+                { id: 'ast',          label: 'AST/GOT',      unit: 'U/L',    ref: '10–50' },
+                { id: 'creatinina',   label: 'Creatinina',   unit: 'mg/dL',  ref: '0.5–1.5' },
+                { id: 'bun',          label: 'BUN',          unit: 'mg/dL',  ref: '7–27' },
+                { id: 'glucosa',      label: 'Glucosa',      unit: 'mg/dL',  ref: '70–120' },
+                { id: 'proteinas',    label: 'Proteínas tot.', unit: 'g/dL', ref: '5.4–7.1' },
+                { id: 'albumina',     label: 'Albúmina',     unit: 'g/dL',   ref: '2.3–3.9' },
+                { id: 'bio_interp',   label: 'Interpretación', unit: '', ref: '', wide: true }
+            ]
+        },
+        'Urianálisis': {
+            icon: '🫧',
+            fields: [
+                { id: 'uri_aspecto',  label: 'Aspecto',      unit: '',       ref: 'Claro' },
+                { id: 'uri_ph',       label: 'pH',           unit: '',       ref: '5.5–7.5' },
+                { id: 'uri_densidad', label: 'Densidad',     unit: '',       ref: '1.015–1.045' },
+                { id: 'uri_proteinas',label: 'Proteínas',    unit: '',       ref: 'Negativo' },
+                { id: 'uri_glucosa',  label: 'Glucosa',      unit: '',       ref: 'Negativo' },
+                { id: 'uri_celulas',  label: 'Células',      unit: '/campo', ref: '<5' },
+                { id: 'uri_bacterias',label: 'Bacterias',    unit: '',       ref: 'Negativo' },
+                { id: 'uri_interp',   label: 'Interpretación', unit: '', ref: '', wide: true }
+            ]
+        },
+        'Coproparasitológico': {
+            icon: '🔬',
+            fields: [
+                { id: 'copro_res',    label: 'Resultado',    unit: '',  ref: 'Neg/Pos', select: ['Negativo','Positivo'] },
+                { id: 'copro_para',   label: 'Parásitos encontrados', unit: '', ref: '', wide: true }
+            ]
+        },
+        'Cultivo y antibiograma': {
+            icon: '🧫',
+            fields: [
+                { id: 'cult_muestra', label: 'Tipo de muestra', unit: '', ref: '' },
+                { id: 'cult_org',     label: 'Microorganismo',  unit: '', ref: '' },
+                { id: 'cult_sensi',   label: 'Sensibilidad antibiótica', unit: '', ref: '', wide: true }
+            ]
+        },
+        'Citología': {
+            icon: '🔬',
+            fields: [
+                { id: 'cito_muestra', label: 'Tipo de muestra', unit: '', ref: '' },
+                { id: 'cito_hall',    label: 'Hallazgos',        unit: '', ref: '', wide: true },
+                { id: 'cito_interp',  label: 'Interpretación',   unit: '', ref: '', wide: true }
+            ]
+        },
+        'Radiografía': {
+            icon: '🩻',
+            fields: [
+                { id: 'rx_region',    label: 'Región',      unit: '', ref: '' },
+                { id: 'rx_proy',      label: 'Proyección',  unit: '', ref: '' },
+                { id: 'rx_hall',      label: 'Hallazgos',   unit: '', ref: '', wide: true }
+            ]
+        },
+        'Ecografía': {
+            icon: '📡',
+            fields: [
+                { id: 'eco_region',   label: 'Órganos/Región evaluados', unit: '', ref: '' },
+                { id: 'eco_hall',     label: 'Hallazgos',  unit: '', ref: '', wide: true }
+            ]
+        },
+        'PCR / Serología': {
+            icon: '🧬',
+            fields: [
+                { id: 'pcr_test',     label: 'Test específico', unit: '', ref: '' },
+                { id: 'pcr_res',      label: 'Resultado',       unit: '', ref: '', select: ['Negativo','Positivo','Dudoso'] },
+                { id: 'pcr_titulo',   label: 'Título/Índice',   unit: '', ref: '' }
+            ]
+        },
+        'Otro': {
+            icon: '📄',
+            fields: [
+                { id: 'otro_nombre',  label: 'Nombre del análisis', unit: '', ref: '' },
+                { id: 'otro_res',     label: 'Resultado',            unit: '', ref: '', wide: true }
+            ]
+        }
+    },
+
+    renderLabField(f, testKey) {
+        const inputId = `${testKey}_${f.id}`;
+        const refText = f.ref ? `<span style="font-size:0.7rem;color:var(--text-muted);margin-left:0.25rem;">(ref: ${f.ref})</span>` : '';
+
+        if (f.select) {
+            return `
+          <div ${f.wide ? 'style="grid-column:1/-1;"' : ''}>
+            <label style="font-size:0.78rem;color:var(--text-muted);display:block;margin-bottom:0.2rem;">
+              ${f.label}${f.unit ? ` <em style="font-size:0.7rem;">${f.unit}</em>` : ''}${refText}
+            </label>
+            <select class="form-select" id="${inputId}" style="padding:0.3rem 0.5rem;font-size:0.82rem;">
+              <option value="">—</option>
+              ${f.select.map(o => `<option value="${o}">${o}</option>`).join('')}
+            </select>
+          </div>`;
+        }
+
+        return `
+          <div ${f.wide ? 'style="grid-column:1/-1;"' : ''}>
+            <label style="font-size:0.78rem;color:var(--text-muted);display:block;margin-bottom:0.2rem;">
+              ${f.label}${f.unit ? ` <em style="font-size:0.7rem;">${f.unit}</em>` : ''}${refText}
+            </label>
+            <input type="text" class="form-input" id="${inputId}"
+              style="padding:0.3rem 0.5rem;font-size:0.82rem;"
+              placeholder="${f.ref || ''}">
+          </div>`;
+    },
+
+    toggleLabPanel(checkbox, testName) {
+        const container = document.getElementById('labPanelsContainer');
+        const panelId = `labPanel_${testName.replace(/[^a-z0-9]/gi, '_')}`;
+
+        if (checkbox.checked) {
+            if (document.getElementById(panelId)) return;
+            const config = this.labConfig[testName];
+            const testKey = testName.replace(/[^a-z0-9]/gi, '_');
+            const fieldsHtml = config.fields.map(f => this.renderLabField(f, testKey)).join('');
+
+            const panel = document.createElement('div');
+            panel.id = panelId;
+            panel.className = 'lab-panel';
+            panel.innerHTML = `
+          <div class="lab-panel-header">
+            <span>${config.icon} ${testName}</span>
+          </div>
+          <div class="lab-panel-fields">${fieldsHtml}</div>
+        `;
+            container.appendChild(panel);
+
+            // Animate in
+            requestAnimationFrame(() => panel.classList.add('lab-panel--visible'));
+        } else {
+            const panel = document.getElementById(panelId);
+            if (panel) {
+                panel.classList.remove('lab-panel--visible');
+                setTimeout(() => panel.remove(), 250);
+            }
+        }
+    },
+
+    collectLabResults() {
+        const results = {};
+        Object.entries(this.labConfig).forEach(([testName, config]) => {
+            const panelId = `labPanel_${testName.replace(/[^a-z0-9]/gi, '_')}`;
+            if (!document.getElementById(panelId)) return;
+
+            const testKey = testName.replace(/[^a-z0-9]/gi, '_');
+            const testData = {};
+            config.fields.forEach(f => {
+                const el = document.getElementById(`${testKey}_${f.id}`);
+                if (el && el.value.trim()) testData[f.label] = el.value.trim();
+            });
+            if (Object.keys(testData).length) results[testName] = testData;
+        });
+
+        if (!Object.keys(results).length) return null;
+        // Serialize to readable text
+        return Object.entries(results).map(([test, fields]) =>
+            `[${test}] ` + Object.entries(fields).map(([k, v]) => `${k}: ${v}`).join(' | ')
+        ).join('\n');
+    },
+
     showNewRecordForm() {
         const petName = this.selectedPet?.name || 'Paciente';
         const today = new Date().toISOString().split('T')[0];
         const vetName = window.AuthState?.profile?.name || '';
 
-        const labTests = [
-            'Hemograma completo', 'Bioquímica sérica', 'Urianálisis',
-            'Coproparasitológico', 'Cultivo y antibiograma', 'Citología',
-            'Radiografía', 'Ecografía', 'PCR / Serología', 'Otro'
-        ];
-
+        const labTests = Object.keys(this.labConfig);
         const labChecklist = labTests.map((test, i) => `
           <div class="lab-item">
             <input type="checkbox" id="lab_${i}"
-              onchange="document.getElementById('labRes_${i}').disabled=!this.checked">
+              onchange="ClinicalRecords.toggleLabPanel(this, '${test.replace(/'/g, "\\'")}')">
             <label for="lab_${i}">${test}</label>
-            <input type="text" id="labRes_${i}" disabled placeholder="Resultado">
           </div>
         `).join('');
 
@@ -327,9 +498,13 @@ const ClinicalRecords = {
 
         <!-- Fila 3: Resultados de Laboratorio -->
         <div class="form-group" style="margin-bottom:1rem;">
-          <label class="form-label">Resultados de Laboratorio</label>
+          <label class="form-label">Resultados de Laboratorio
+            <span style="font-size:0.75rem;color:var(--text-muted);font-weight:400;margin-left:0.5rem;">
+              — Selecciona los análisis realizados
+            </span>
+          </label>
           <div class="lab-checklist">${labChecklist}</div>
-          <input type="hidden" id="recLabResults">
+          <div id="labPanelsContainer" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:0.5rem;"></div>
         </div>
 
         <!-- Fila 4: Diagnóstico + Tratamiento -->
@@ -397,21 +572,7 @@ const ClinicalRecords = {
         const pet = this.selectedPet;
         if (!pet) return;
 
-        // Serialize lab checklist
-        const labTests = [
-            'Hemograma completo', 'Bioquímica sérica', 'Urianálisis',
-            'Coproparasitológico', 'Cultivo y antibiograma', 'Citología',
-            'Radiografía', 'Ecografía', 'PCR / Serología', 'Otro'
-        ];
-        const labResults = labTests
-            .map((test, i) => {
-                const cb = document.getElementById(`lab_${i}`);
-                const res = document.getElementById(`labRes_${i}`);
-                if (cb?.checked) return `${test}: ${res?.value.trim() || 'Realizado'}`;
-                return null;
-            })
-            .filter(Boolean)
-            .join(' | ');
+        const labResults = this.collectLabResults();
 
         const record = {
             patientId:      pet.id,

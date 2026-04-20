@@ -632,8 +632,7 @@ body::before {
   gap: 0.4rem;
 }
 .lab-item {
-  display: grid;
-  grid-template-columns: 18px auto 1fr;
+  display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
@@ -674,6 +673,35 @@ body::before {
 }
 .lab-item input[type="text"]:not(:disabled) {
   border-color: var(--brand-green);
+}
+
+/* Dynamic lab result panels */
+.lab-panel {
+  background: var(--bg-glass);
+  border: 1px solid var(--brand-green);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.lab-panel--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.lab-panel-header {
+  background: rgba(64, 224, 208, 0.1);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--brand-green);
+  border-bottom: 1px solid rgba(64, 224, 208, 0.2);
+}
+.lab-panel-fields {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  padding: 0.75rem;
 }
 
 .modal-header {
