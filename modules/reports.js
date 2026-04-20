@@ -27,48 +27,48 @@ const Reports = {
       </div>
       
       <!-- Key Metrics -->
-      <div class="stats-grid mb-lg">
+      <div class="stats-grid mb-lg" id="reportsMetrics">
         <div class="stat-card">
           <div class="stat-header">
             <div>
               <div class="stat-label">Total Citas</div>
-              <div class="stat-value">127</div>
-              <span class="stat-change positive">+18%</span>
+              <div class="stat-value" id="rpt-appointments">—</div>
+              <span class="stat-change" style="color: var(--text-muted); font-size: 0.75rem;">datos reales</span>
             </div>
             <div class="stat-icon">📅</div>
           </div>
         </div>
-        
+
         <div class="stat-card">
           <div class="stat-header">
             <div>
-              <div class="stat-label">Nuevos Clientes</div>
-              <div class="stat-value">23</div>
-              <span class="stat-change positive">+32%</span>
+              <div class="stat-label">Total Clientes</div>
+              <div class="stat-value" id="rpt-clients">—</div>
+              <span class="stat-change" style="color: var(--text-muted); font-size: 0.75rem;">datos reales</span>
             </div>
             <div class="stat-icon">👥</div>
           </div>
         </div>
-        
+
         <div class="stat-card">
           <div class="stat-header">
             <div>
-              <div class="stat-label">Tasa de Asistencia</div>
-              <div class="stat-value">96%</div>
-              <span class="stat-change positive">+4%</span>
+              <div class="stat-label">Citas Completadas</div>
+              <div class="stat-value" id="rpt-completed">—</div>
+              <span class="stat-change" style="color: var(--text-muted); font-size: 0.75rem;">datos reales</span>
             </div>
             <div class="stat-icon">✅</div>
           </div>
         </div>
-        
+
         <div class="stat-card">
           <div class="stat-header">
             <div>
-              <div class="stat-label">Satisfacción</div>
-              <div class="stat-value">4.8</div>
-              <span class="stat-change positive">+0.3</span>
+              <div class="stat-label">Citas Pendientes</div>
+              <div class="stat-value" id="rpt-pending">—</div>
+              <span class="stat-change" style="color: var(--text-muted); font-size: 0.75rem;">datos reales</span>
             </div>
-            <div class="stat-icon">⭐</div>
+            <div class="stat-icon">⏳</div>
           </div>
         </div>
       </div>
@@ -135,76 +135,32 @@ const Reports = {
               </thead>
               <tbody>
                 <tr>
-                  <td>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                      <span>✅</span>
-                      <strong>Confirmación de Citas</strong>
-                    </div>
-                  </td>
-                  <td>127</td>
-                  <td><span class="badge badge-success">99%</span></td>
-                  <td><span class="badge badge-success">94%</span></td>
-                  <td>89</td>
+                  <td><div style="display: flex; align-items: center; gap: 0.5rem;"><span>✅</span><strong>Confirmación de Citas</strong></div></td>
+                  <td>—</td>
+                  <td><span class="badge" style="background:var(--bg-glass);color:var(--text-muted);">pendiente</span></td>
+                  <td><span class="badge" style="background:var(--bg-glass);color:var(--text-muted);">pendiente</span></td>
+                  <td>—</td>
                 </tr>
                 <tr>
-                  <td>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                      <span>⏰</span>
-                      <strong>Recordatorios 24h</strong>
-                    </div>
-                  </td>
-                  <td>98</td>
-                  <td><span class="badge badge-success">98%</span></td>
-                  <td><span class="badge badge-success">92%</span></td>
-                  <td>76</td>
+                  <td><div style="display: flex; align-items: center; gap: 0.5rem;"><span>⏰</span><strong>Recordatorios 24h</strong></div></td>
+                  <td>—</td>
+                  <td><span class="badge" style="background:var(--bg-glass);color:var(--text-muted);">pendiente</span></td>
+                  <td><span class="badge" style="background:var(--bg-glass);color:var(--text-muted);">pendiente</span></td>
+                  <td>—</td>
                 </tr>
                 <tr>
-                  <td>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                      <span>🔔</span>
-                      <strong>Recordatorios 2h</strong>
-                    </div>
-                  </td>
-                  <td>95</td>
-                  <td><span class="badge badge-success">99%</span></td>
-                  <td><span class="badge badge-success">96%</span></td>
-                  <td>82</td>
+                  <td><div style="display: flex; align-items: center; gap: 0.5rem;"><span>🔔</span><strong>Recordatorios 2h</strong></div></td>
+                  <td>—</td>
+                  <td><span class="badge" style="background:var(--bg-glass);color:var(--text-muted);">pendiente</span></td>
+                  <td><span class="badge" style="background:var(--bg-glass);color:var(--text-muted);">pendiente</span></td>
+                  <td>—</td>
                 </tr>
                 <tr>
-                  <td>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                      <span>📋</span>
-                      <strong>Instrucciones Post-Consulta</strong>
-                    </div>
-                  </td>
-                  <td>103</td>
-                  <td><span class="badge badge-success">100%</span></td>
-                  <td><span class="badge badge-success">88%</span></td>
-                  <td>45</td>
-                </tr>
-                <tr>
-                  <td>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                      <span>🔄</span>
-                      <strong>Seguimiento 3 días</strong>
-                    </div>
-                  </td>
-                  <td>87</td>
-                  <td><span class="badge badge-success">99%</span></td>
-                  <td><span class="badge badge-success">85%</span></td>
-                  <td>62</td>
-                </tr>
-                <tr>
-                  <td>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                      <span>💉</span>
-                      <strong>Recordatorios de Vacunación</strong>
-                    </div>
-                  </td>
-                  <td>34</td>
-                  <td><span class="badge badge-success">100%</span></td>
-                  <td><span class="badge badge-success">91%</span></td>
-                  <td>28</td>
+                  <td><div style="display: flex; align-items: center; gap: 0.5rem;"><span>📋</span><strong>Instrucciones Post-Consulta</strong></div></td>
+                  <td>—</td>
+                  <td><span class="badge" style="background:var(--bg-glass);color:var(--text-muted);">pendiente</span></td>
+                  <td><span class="badge" style="background:var(--bg-glass);color:var(--text-muted);">pendiente</span></td>
+                  <td>—</td>
                 </tr>
               </tbody>
             </table>
@@ -258,7 +214,24 @@ const Reports = {
   },
 
   init() {
+    this.loadRealMetrics();
     this.loadCharts();
+  },
+
+  loadRealMetrics() {
+    if (typeof App === 'undefined' || !App.data) return;
+
+    const appointments = App.data.appointments || [];
+    const clients = App.data.clients || [];
+
+    const completed = appointments.filter(a => a.status === 'completed').length;
+    const pending   = appointments.filter(a => a.status === 'pending' || a.status === 'confirmed').length;
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('rpt-appointments', appointments.length);
+    set('rpt-clients',      clients.length);
+    set('rpt-completed',    completed);
+    set('rpt-pending',      pending);
   },
 
   setPeriod(period) {

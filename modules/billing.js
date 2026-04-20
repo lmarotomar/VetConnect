@@ -446,65 +446,37 @@ const Billing = {
 
   // Data methods (mock data for now)
   getFinancialStats() {
+    // No invoices table yet — return zeros until Stripe/billing integration is complete
     return {
-      monthlyRevenue: 45280,
-      monthlyGrowth: 12,
-      pendingCount: 8,
-      pendingAmount: 3450,
-      todayRevenue: 1850,
-      todayInvoices: 6,
-      avgTicket: 385,
-      ticketGrowth: 8
+      monthlyRevenue: 0,
+      monthlyGrowth: 0,
+      pendingCount: 0,
+      pendingAmount: 0,
+      todayRevenue: 0,
+      todayInvoices: 0,
+      avgTicket: 0,
+      ticketGrowth: 0
     };
   },
 
   getRecentInvoices() {
-    return [
-      {
-        id: 1,
-        invoice_number: 'INV-2025-001',
-        client_name: 'María García',
-        pet_name: 'Max',
-        invoice_date: '2025-01-10',
-        total: 450.00,
-        status: 'paid'
-      },
-      {
-        id: 2,
-        invoice_number: 'INV-2025-002',
-        client_name: 'Carlos López',
-        pet_name: 'Luna',
-        invoice_date: '2025-01-09',
-        total: 280.00,
-        status: 'pending'
-      },
-      {
-        id: 3,
-        invoice_number: 'INV-2025-003',
-        client_name: 'Ana Martínez',
-        pet_name: 'Rocky',
-        invoice_date: '2025-01-08',
-        total: 650.00,
-        status: 'paid'
-      }
-    ];
+    // No invoices table yet — returns empty until billing module is connected to Supabase
+    return [];
   },
 
   getClients() {
-    return [
-      { id: 1, name: 'María García' },
-      { id: 2, name: 'Carlos López' },
-      { id: 3, name: 'Ana Martínez' },
-      { id: 4, name: 'Pedro Sánchez' }
-    ];
+    if (typeof App !== 'undefined' && App.data && App.data.clients) {
+      return App.data.clients.map(c => ({ id: c.id, name: c.name }));
+    }
+    return [];
   },
 
   getPetsByClient(clientId) {
+    if (typeof App !== 'undefined' && App.data && App.data.clients) {
+      const client = App.data.clients.find(c => String(c.id) === String(clientId));
+      if (client) return (client.patients || client.pets || []).map(p => ({ id: p.id, name: p.name, species: p.species || '' }));
+    }
     const petsByClient = {
-      1: [{ id: 1, name: 'Max', species: 'Perro' }],
-      2: [{ id: 2, name: 'Luna', species: 'Gato' }],
-      3: [{ id: 3, name: 'Rocky', species: 'Perro' }],
-      4: [{ id: 4, name: 'Mimi', species: 'Gato' }]
     };
     return petsByClient[clientId] || [];
   },
