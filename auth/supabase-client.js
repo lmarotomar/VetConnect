@@ -4,8 +4,8 @@
 const SUPABASE_URL = 'https://dppxgwjvfiqbgjupxipf.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwcHhnd2p2ZmlxYmdqdXB4aXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4ODE4MDksImV4cCI6MjA4MjQ1NzgwOX0.zBDqyWejXCkqeQ-9FqRIHg2QEeppwAgTGymZ_m3DLEc';
 
-// Initialize Supabase client
-let supabase = null;
+// Initialize Supabase client — use _sb to avoid conflict with CDN's global 'supabase' var
+let _sb = null;
 
 // Role hierarchy and permissions
 const ROLES = {
@@ -115,17 +115,19 @@ const AuthState = {
 
 // Initialize Supabase when the script loads
 async function initSupabase() {
-    // Check if Supabase library is loaded
-    if (typeof window.supabase === 'undefined') {
-        console.error('Supabase library not loaded. Make sure to include the Supabase CDN script.');
+    // The CDN sets window.supabase to the library object — use it to create a client
+    const lib = window.supabase;
+    if (!lib || typeof lib.createClient !== 'function') {
+        console.error('Supabase library not loaded.');
         return false;
     }
 
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    window.supabase = supabase; // expose client globally so db.js can use supabase.from()
+    // Create client and expose as window.supabase so db.js can use supabase.from()
+    _sb = lib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.supabase = _sb;
 
     // Check for existing session
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const { data: { session } } = await _sb.auth.getSession();
 
     if (session) {
         AuthState.session = session;
@@ -137,9 +139,7 @@ async function initSupabase() {
     AuthState.isLoading = false;
 
     // Listen for auth changes
-    supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('Auth state changed:', event);
-
+    _sb.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session) {
             AuthState.session = session;
             AuthState.user = session.user;
@@ -192,7 +192,7 @@ async function loadUserProfile() {
 const Auth = {
     // Sign up with email and password
     async signUp(email, password, metadata = {}) {
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error } = await _sb.auth.signUp({
             email,
             password,
             options: {
@@ -206,7 +206,7 @@ const Auth = {
 
     // Sign in with email and password
     async signIn(email, password) {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await _sb.auth.signInWithPassword({
             email,
             password
         });
@@ -217,7 +217,7 @@ const Auth = {
 
     // Sign out
     async signOut() {
-        const { error } = await supabase.auth.signOut();
+        const { error } = await _sb.auth.signOut();
         if (error) throw error;
 
         // Redirect to login
@@ -226,7 +226,7 @@ const Auth = {
 
     // Reset password
     async resetPassword(email) {
-        const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        const { data, error } = await _sb.auth.resetPasswordForEmail(email, {
             redirectTo: window.location.origin + '/auth/reset-password.html'
         });
 
