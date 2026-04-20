@@ -109,19 +109,20 @@ const Appointments = {
         let appointments = App.getAppointments();
         const today = new Date().toISOString().split('T')[0];
 
-        // Apply filters
+        // Apply filters — Supabase returns appointment_date / appointment_time
         switch (this.currentFilter) {
             case 'today':
-                appointments = appointments.filter(a => a.date === today);
+                appointments = appointments.filter(a => (a.appointment_date || a.date) === today);
                 break;
-            case 'week':
+            case 'week': {
                 const weekFromNow = new Date();
                 weekFromNow.setDate(weekFromNow.getDate() + 7);
                 appointments = appointments.filter(a => {
-                    const aptDate = new Date(a.date);
+                    const aptDate = new Date(a.appointment_date || a.date);
                     return aptDate >= new Date(today) && aptDate <= weekFromNow;
                 });
                 break;
+            }
             case 'pending':
                 appointments = appointments.filter(a => a.status === 'pending');
                 break;
@@ -132,10 +133,12 @@ const Appointments = {
 
         // Sort by date and time
         appointments.sort((a, b) => {
-            if (a.date !== b.date) {
-                return a.date.localeCompare(b.date);
-            }
-            return a.time.localeCompare(b.time);
+            const da = a.appointment_date || a.date || '';
+            const db = b.appointment_date || b.date || '';
+            if (da !== db) return da.localeCompare(db);
+            const ta = a.appointment_time || a.time || '';
+            const tb = b.appointment_time || b.time || '';
+            return ta.localeCompare(tb);
         });
 
         const container = document.getElementById('appointmentsList');
@@ -171,8 +174,13 @@ const Appointments = {
     },
 
     renderAppointmentRow(appointment) {
-        const client = App.getClient(appointment.clientId);
-        const pet = client?.pets?.find(p => p.id === appointment.petId);
+        // Supabase returns nested client/patient objects; fall back to App cache for optimistic rows
+        const client = appointment.client || App.getClient(appointment.clientId || appointment.client_id);
+        const pet = appointment.patient || client?.pets?.find(p => p.id === (appointment.petId || appointment.patient_id));
+
+        const aptDate = appointment.appointment_date || appointment.date || '';
+        const aptTime = (appointment.appointment_time || appointment.time || '').slice(0, 5);
+
         const statusBadge = appointment.status === 'confirmed' ? 'badge-success' :
             appointment.status === 'pending' ? 'badge-warning' : 'badge-info';
         const statusText = appointment.status === 'confirmed' ? 'Confirmada' :
@@ -180,8 +188,8 @@ const Appointments = {
 
         return `
       <tr>
-        <td>${App.formatDate(appointment.date)}</td>
-        <td><strong>${appointment.time}</strong></td>
+        <td>${App.formatDate(aptDate)}</td>
+        <td><strong>${aptTime}</strong></td>
         <td>${client?.name || 'N/A'}</td>
         <td>
           <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -192,7 +200,7 @@ const Appointments = {
             </div>
           </div>
         </td>
-        <td>${appointment.type}</td>
+        <td>${appointment.type || appointment.appointment_type || ''}</td>
         <td><span class="badge ${statusBadge}">${statusText}</span></td>
         <td>
           <div style="display: flex; gap: 0.5rem;">
@@ -208,8 +216,10 @@ const Appointments = {
         const appointment = App.getAppointment(id);
         if (!appointment) return;
 
-        const client = App.getClient(appointment.clientId);
-        const pet = client?.pets?.find(p => p.id === appointment.petId);
+        const client = appointment.client || App.getClient(appointment.clientId || appointment.client_id);
+        const pet = appointment.patient || client?.pets?.find(p => p.id === (appointment.petId || appointment.patient_id));
+        const aptDate = appointment.appointment_date || appointment.date || '';
+        const aptTime = (appointment.appointment_time || appointment.time || '').slice(0, 5);
 
         const content = `
       <div style="display: grid; gap: 1rem;">
@@ -220,44 +230,44 @@ const Appointments = {
             <span class="text-muted" style="font-size: 0.875rem;">${client?.email || ''} • ${client?.phone || ''}</span>
           </div>
         </div>
-        
+
         <div>
           <div class="form-label">Mascota</div>
           <div style="padding: 0.75rem; background: var(--bg-glass); border-radius: var(--radius-md);">
             🐾 ${pet?.name || 'N/A'}<br>
-            <span class="text-muted" style="font-size: 0.875rem;">${pet?.species || ''} • ${pet?.breed || ''} • ${pet?.age || ''} años</span>
+            <span class="text-muted" style="font-size: 0.875rem;">${pet?.species || ''} • ${pet?.breed || ''} • ${pet?.age || ''}</span>
           </div>
         </div>
-        
+
         <div class="grid grid-2">
           <div>
             <div class="form-label">Fecha</div>
             <div style="padding: 0.75rem; background: var(--bg-glass); border-radius: var(--radius-md);">
-              ${App.formatDate(appointment.date)}
+              ${App.formatDate(aptDate)}
             </div>
           </div>
           <div>
             <div class="form-label">Hora</div>
             <div style="padding: 0.75rem; background: var(--bg-glass); border-radius: var(--radius-md);">
-              ${appointment.time}
+              ${aptTime}
             </div>
           </div>
         </div>
-        
+
         <div>
           <div class="form-label">Tipo de Consulta</div>
           <div style="padding: 0.75rem; background: var(--bg-glass); border-radius: var(--radius-md);">
-            ${appointment.type}
+            ${appointment.type || ''}
           </div>
         </div>
-        
+
         <div>
           <div class="form-label">Notas</div>
           <div style="padding: 0.75rem; background: var(--bg-glass); border-radius: var(--radius-md);">
             ${appointment.notes || 'Sin notas'}
           </div>
         </div>
-        
+
         <button class="btn btn-primary" onclick="App.closeModal()">Cerrar</button>
       </div>
     `;

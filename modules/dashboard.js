@@ -119,25 +119,25 @@ const Dashboard = {
     loadStats() {
         const appointments = App.getAppointments();
         const today = new Date().toISOString().split('T')[0];
-        const todayAppointments = appointments.filter(a => a.date === today);
+        const todayAppointments = appointments.filter(a => (a.appointment_date || a.date) === today);
 
         document.getElementById('todayAppointments').textContent = todayAppointments.length;
 
         const clients = App.getClients();
-        const totalPets = clients.reduce((sum, client) => sum + (client.pets?.length || 0), 0);
+        const totalPets = clients.reduce((sum, client) => sum + (client.pets?.length || client.patients?.length || 0), 0);
         document.getElementById('activePatients').textContent = totalPets;
 
         const communications = App.data?.communications || [];
         document.getElementById('messagesSent').textContent = communications.length;
 
-        const followUps = appointments.filter(a => a.type === 'Control').length;
+        const followUps = appointments.filter(a => (a.type || a.appointment_type) === 'Control').length;
         document.getElementById('followUps').textContent = followUps;
     },
 
     loadTodayAppointments() {
         const appointments = App.getAppointments();
         const today = new Date().toISOString().split('T')[0];
-        const todayAppointments = appointments.filter(a => a.date === today);
+        const todayAppointments = appointments.filter(a => (a.appointment_date || a.date) === today);
 
         const container = document.getElementById('todayAppointmentsList');
 
@@ -147,15 +147,17 @@ const Dashboard = {
         }
 
         container.innerHTML = todayAppointments.map(apt => {
-            const client = App.getClient(apt.clientId);
-            const pet = client?.pets?.find(p => p.id === apt.petId);
+            // Supabase returns nested client/patient; fall back to cache for optimistic rows
+            const client = apt.client || App.getClient(apt.clientId || apt.client_id);
+            const pet = apt.patient || client?.pets?.find(p => p.id === (apt.petId || apt.patient_id));
+            const aptTime = (apt.appointment_time || apt.time || '').slice(0, 5);
             const statusBadge = apt.status === 'confirmed' ? 'badge-success' : 'badge-warning';
 
             return `
         <div style="padding: 1rem; border-bottom: 1px solid var(--border-glass); display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <div style="font-weight: 600;">${apt.time} - ${pet?.name || 'Mascota'}</div>
-            <div class="text-muted" style="font-size: 0.875rem;">${client?.name || 'Cliente'} • ${apt.type}</div>
+            <div style="font-weight: 600;">${aptTime} - ${pet?.name || 'Mascota'}</div>
+            <div class="text-muted" style="font-size: 0.875rem;">${client?.name || 'Cliente'} • ${apt.type || apt.appointment_type || ''}</div>
           </div>
           <span class="badge ${statusBadge}">${apt.status === 'confirmed' ? 'Confirmada' : 'Pendiente'}</span>
         </div>
