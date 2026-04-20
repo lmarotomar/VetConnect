@@ -629,16 +629,22 @@ body::before {
 .lab-checklist {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 .lab-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 18px auto 1fr;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   background: var(--bg-glass);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-glass);
+  transition: border-color 0.2s;
+}
+.lab-item:has(input[type="checkbox"]:checked) {
+  border-color: var(--brand-green);
+  background: rgba(64, 224, 208, 0.05);
 }
 .lab-item input[type="checkbox"] {
   width: 16px;
@@ -647,22 +653,27 @@ body::before {
   flex-shrink: 0;
 }
 .lab-item label {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
-  flex: 1;
   cursor: pointer;
+  white-space: nowrap;
 }
 .lab-item input[type="text"] {
-  width: 90px;
-  padding: 0.2rem 0.4rem;
-  font-size: 0.8rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.82rem;
   background: var(--bg-secondary);
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
 }
 .lab-item input[type="text"]:disabled {
-  opacity: 0.3;
+  opacity: 0.25;
+  pointer-events: none;
+}
+.lab-item input[type="text"]:not(:disabled) {
+  border-color: var(--brand-green);
 }
 
 .modal-header {
