@@ -184,16 +184,19 @@ const DB = {
             .from('clinical_records')
             .insert([{
                 organization_id: this._orgId(),
-                patient_id: record.patientId,
-                appointment_id: record.appointmentId || null,
+                patient_id:      record.patientId,
+                appointment_id:  record.appointmentId || null,
+                record_date:     record.recordDate || new Date().toISOString(),
                 chief_complaint: record.chiefComplaint || null,
-                symptoms: record.symptoms || null,
-                diagnosis: record.diagnosis,
-                treatment: record.treatment,
-                medications: record.medications || null,
-                notes: record.notes || null,
-                follow_up_date: record.followUpDate || null,
-                veterinarian: record.veterinarian || null
+                symptoms:        record.symptoms || null,
+                physical_exam:   record.physicalExam || null,
+                diagnosis:       record.diagnosis,
+                treatment:       record.treatment,
+                medications:     record.medications || null,
+                lab_results:     record.labResults || null,
+                notes:           record.notes || null,
+                follow_up_date:  record.followUpDate || null,
+                veterinarian:    record.veterinarian || null
             }])
             .select()
             .single();

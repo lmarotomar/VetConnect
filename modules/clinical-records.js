@@ -51,7 +51,7 @@ const ClinicalRecords = {
         clients.forEach(client => {
             const pets = client.pets || client.patients || [];
             pets.forEach(pet => {
-                const label = `${pet.name} — ${client.name} (${pet.species || ''})`;
+                const label = `${pet.name} (${pet.species || ''}) — ${client.name}`;
                 if (!lc || label.toLowerCase().includes(lc)) {
                     // Use '||' as separator — safe with UUIDs
                     options += `<option value="${client.id}||${pet.id}">${label}</option>`;
@@ -251,12 +251,19 @@ const ClinicalRecords = {
     showNewRecordForm() {
         const petName = this.selectedPet?.name || 'Paciente';
 
+        const today = new Date().toISOString().split('T')[0];
         const content = `
       <form id="newClinicalRecordForm" onsubmit="ClinicalRecords.saveRecord(event)">
-        <div class="form-group">
-          <label class="form-label">Motivo de Consulta *</label>
-          <input type="text" class="form-input" id="recChiefComplaint"
-            placeholder="Ej: Vómitos, decaimiento, revisión anual..." required>
+        <div class="grid grid-2">
+          <div class="form-group">
+            <label class="form-label">Motivo de Consulta *</label>
+            <input type="text" class="form-input" id="recChiefComplaint"
+              placeholder="Ej: Vómitos, decaimiento, revisión anual..." required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha de Consulta</label>
+            <input type="date" class="form-input" id="recDate" value="${today}">
+          </div>
         </div>
         <div class="grid grid-2">
           <div class="form-group">
@@ -287,8 +294,21 @@ const ClinicalRecords = {
               placeholder="Medicamentos prescritos...">
           </div>
           <div class="form-group">
-            <label class="form-label">Próxima revisión</label>
+            <label class="form-label">Resultados de Laboratorio</label>
+            <input type="text" class="form-input" id="recLabResults"
+              placeholder="Hemograma, bioquímica, etc.">
+          </div>
+        </div>
+        <div class="grid grid-2">
+          <div class="form-group">
+            <label class="form-label">Próxima Revisión</label>
             <input type="date" class="form-input" id="recFollowUp">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Veterinario</label>
+            <input type="text" class="form-input" id="recVet"
+              value="${window.AuthState?.profile?.name || ''}" readonly
+              style="opacity:0.7;">
           </div>
         </div>
         <div class="form-group">
@@ -316,22 +336,20 @@ const ClinicalRecords = {
         const pet = this.selectedPet;
         if (!pet) return;
 
-        const exam = document.getElementById('recExam').value.trim();
-        const symptoms = document.getElementById('recSymptoms').value.trim();
-        const notesBase = document.getElementById('recNotes').value.trim();
-        const notes = [exam ? `Examen físico: ${exam}` : '', notesBase].filter(Boolean).join('\n\n');
-
         const record = {
             patientId:      pet.id,
             appointmentId:  null,
+            recordDate:     document.getElementById('recDate').value || new Date().toISOString().split('T')[0],
             chiefComplaint: document.getElementById('recChiefComplaint').value.trim(),
-            symptoms:       symptoms || null,
+            symptoms:       document.getElementById('recSymptoms').value.trim() || null,
+            physicalExam:   document.getElementById('recExam').value.trim() || null,
             diagnosis:      document.getElementById('recDiagnosis').value.trim(),
             treatment:      document.getElementById('recTreatment').value.trim(),
             medications:    document.getElementById('recMedications').value.trim() || null,
-            notes:          notes || null,
+            labResults:     document.getElementById('recLabResults').value.trim() || null,
+            notes:          document.getElementById('recNotes').value.trim() || null,
             followUpDate:   document.getElementById('recFollowUp').value || null,
-            veterinarian:   window.AuthState?.profile?.name || null
+            veterinarian:   document.getElementById('recVet').value.trim() || null
         };
 
         try {
