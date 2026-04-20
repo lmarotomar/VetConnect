@@ -166,7 +166,7 @@ const Dashboard = {
     },
 
     loadPendingCommunications() {
-        const communications = App.mockData.communications.slice(-5);
+        const communications = (App.data?.communications || []).slice(-5);
         const container = document.getElementById('pendingCommunications');
 
         if (communications.length === 0) {
