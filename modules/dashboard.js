@@ -127,7 +127,7 @@ const Dashboard = {
         const totalPets = clients.reduce((sum, client) => sum + (client.pets?.length || 0), 0);
         document.getElementById('activePatients').textContent = totalPets;
 
-        const communications = App.mockData.communications;
+        const communications = App.data?.communications || [];
         document.getElementById('messagesSent').textContent = communications.length;
 
         const followUps = appointments.filter(a => a.type === 'Control').length;
@@ -304,13 +304,13 @@ const Dashboard = {
 
                     if (clientId && typeof DB !== 'undefined') {
                         await DB.addPatient({ ...pet, clientId });
-                        await App.refreshData('clients');
                     }
 
                     App.closeModal();
                     App.showNotification('Registro completado', `${client.name} y ${pet.name} agregados correctamente`, 'success');
-                    this.loadStats();
+                    App.refreshData('clients');
                 } catch (err) {
+                    App.closeModal();
                     App.showNotification('Error', err.message || 'No se pudo crear el registro', 'error');
                 }
             });
