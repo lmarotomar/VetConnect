@@ -5,42 +5,42 @@ const Communication = {
     render() {
         return `
       <!-- Communication Channels -->
-      <div class="stats-grid mb-lg">
+      <div class="stats-grid mb-lg" id="commStats">
         <div class="stat-card">
           <div class="stat-header">
             <div>
               <div class="stat-label">WhatsApp Enviados</div>
-              <div class="stat-value">156</div>
+              <div class="stat-value" id="comm-whatsapp">—</div>
             </div>
             <div class="stat-icon">📱</div>
           </div>
         </div>
-        
+
         <div class="stat-card">
           <div class="stat-header">
             <div>
               <div class="stat-label">Emails Enviados</div>
-              <div class="stat-value">89</div>
+              <div class="stat-value" id="comm-email">—</div>
             </div>
             <div class="stat-icon">📧</div>
           </div>
         </div>
-        
+
         <div class="stat-card">
           <div class="stat-header">
             <div>
               <div class="stat-label">SMS Enviados</div>
-              <div class="stat-value">34</div>
+              <div class="stat-value" id="comm-sms">—</div>
             </div>
             <div class="stat-icon">💬</div>
           </div>
         </div>
-        
+
         <div class="stat-card">
           <div class="stat-header">
             <div>
-              <div class="stat-label">Tasa de Apertura</div>
-              <div class="stat-value">94%</div>
+              <div class="stat-label">Total Mensajes</div>
+              <div class="stat-value" id="comm-total">—</div>
             </div>
             <div class="stat-icon">📊</div>
           </div>
@@ -205,7 +205,17 @@ const Communication = {
     },
 
     init() {
+        this.loadStats();
         this.loadClients();
+    },
+
+    loadStats() {
+        const comms = (typeof App !== 'undefined' && App.data && App.data.communications) ? App.data.communications : [];
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        set('comm-whatsapp', comms.filter(c => c.channel === 'whatsapp').length);
+        set('comm-email',    comms.filter(c => c.channel === 'email').length);
+        set('comm-sms',      comms.filter(c => c.channel === 'sms').length);
+        set('comm-total',    comms.length);
     },
 
     loadClients() {
