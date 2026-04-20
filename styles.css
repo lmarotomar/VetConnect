@@ -578,13 +578,91 @@ body::before {
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   box-shadow: var(--shadow-lg);
   transform: scale(0.9);
   transition: transform 0.3s ease;
 }
 
+.modal-body {
+  overflow-y: auto;
+  flex: 1;
+}
+
 .modal-overlay.active .modal {
   transform: scale(1);
+}
+
+.modal--wide {
+  max-width: 960px;
+}
+
+/* N/A button next to form fields */
+.field-with-na {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+.field-with-na textarea,
+.field-with-na input {
+  flex: 1;
+}
+.btn-na {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  margin-top: 0.15rem;
+  transition: all 0.15s;
+}
+.btn-na:hover {
+  border-color: var(--brand-green);
+  color: var(--brand-green);
+}
+
+/* Lab results checklist */
+.lab-checklist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+.lab-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-glass);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-glass);
+}
+.lab-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand-green);
+  flex-shrink: 0;
+}
+.lab-item label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  flex: 1;
+  cursor: pointer;
+}
+.lab-item input[type="text"] {
+  width: 90px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+.lab-item input[type="text"]:disabled {
+  opacity: 0.3;
 }
 
 .modal-header {

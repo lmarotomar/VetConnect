@@ -294,15 +294,19 @@ const App = {
 
     // ─── MODALS ───────────────────────────────────────────────────────────────
 
-    showModal(title, content) {
-        const modal = document.getElementById('modalOverlay');
+    showModal(title, content, { wide = false } = {}) {
+        const overlay = document.getElementById('modalOverlay');
+        const modalEl = overlay.querySelector('.modal');
         document.getElementById('modalTitle').textContent = title;
         document.getElementById('modalBody').innerHTML = content;
-        modal.classList.add('active');
+        modalEl.classList.toggle('modal--wide', wide);
+        overlay.classList.add('active');
     },
 
     closeModal() {
-        document.getElementById('modalOverlay').classList.remove('active');
+        const overlay = document.getElementById('modalOverlay');
+        overlay.querySelector('.modal')?.classList.remove('modal--wide');
+        overlay.classList.remove('active');
     },
 
     showNewAppointmentModal() {

@@ -250,75 +250,136 @@ const ClinicalRecords = {
 
     showNewRecordForm() {
         const petName = this.selectedPet?.name || 'Paciente';
-
         const today = new Date().toISOString().split('T')[0];
+        const vetName = window.AuthState?.profile?.name || '';
+
+        const labTests = [
+            'Hemograma completo', 'Bioquímica sérica', 'Urianálisis',
+            'Coproparasitológico', 'Cultivo y antibiograma', 'Citología',
+            'Radiografía', 'Ecografía', 'PCR / Serología', 'Otro'
+        ];
+
+        const labChecklist = labTests.map((test, i) => `
+          <div class="lab-item">
+            <input type="checkbox" id="lab_${i}"
+              onchange="document.getElementById('labRes_${i}').disabled=!this.checked">
+            <label for="lab_${i}">${test}</label>
+            <input type="text" id="labRes_${i}" disabled placeholder="Resultado">
+          </div>
+        `).join('');
+
+        const naBtn = (targetId) =>
+            `<button type="button" class="btn-na" onclick="document.getElementById('${targetId}').value='N/A'">N/A</button>`;
+
         const content = `
       <form id="newClinicalRecordForm" onsubmit="ClinicalRecords.saveRecord(event)">
-        <div class="grid grid-2">
-          <div class="form-group">
+
+        <!-- Fila 1: Motivo + Fecha + Vet -->
+        <div class="grid grid-3" style="margin-bottom:1rem;">
+          <div class="form-group" style="grid-column:1/3;margin:0;">
             <label class="form-label">Motivo de Consulta *</label>
             <input type="text" class="form-input" id="recChiefComplaint"
-              placeholder="Ej: Vómitos, decaimiento, revisión anual..." required>
+              list="motivosList" placeholder="Selecciona o escribe..." required autocomplete="off">
+            <datalist id="motivosList">
+              <option value="Consulta general">
+              <option value="Vacunación">
+              <option value="Desparasitación">
+              <option value="Control post-operatorio">
+              <option value="Urgencia / Emergencia">
+              <option value="Revisión dental">
+              <option value="Problema dermatológico">
+              <option value="Problema digestivo">
+              <option value="Problema respiratorio">
+              <option value="Problema urológico / renal">
+              <option value="Problema oftalmológico">
+              <option value="Problema neurológico">
+              <option value="Trauma / Herida">
+              <option value="Cirugía programada">
+              <option value="Seguimiento de tratamiento">
+              <option value="Revisión anual">
+            </datalist>
           </div>
-          <div class="form-group">
-            <label class="form-label">Fecha de Consulta</label>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Fecha</label>
             <input type="date" class="form-input" id="recDate" value="${today}">
           </div>
         </div>
-        <div class="grid grid-2">
-          <div class="form-group">
+
+        <!-- Fila 2: Síntomas + Examen Físico -->
+        <div class="grid grid-2" style="margin-bottom:1rem;">
+          <div class="form-group" style="margin:0;">
             <label class="form-label">Síntomas</label>
-            <textarea class="form-textarea" id="recSymptoms"
-              placeholder="Describe los síntomas observados..." rows="3"></textarea>
+            <div class="field-with-na">
+              <textarea class="form-textarea" id="recSymptoms"
+                placeholder="Síntomas observados..." rows="3"></textarea>
+              ${naBtn('recSymptoms')}
+            </div>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin:0;">
             <label class="form-label">Examen Físico</label>
-            <textarea class="form-textarea" id="recExam"
-              placeholder="Hallazgos del examen físico..." rows="3"></textarea>
+            <div class="field-with-na">
+              <textarea class="form-textarea" id="recExam"
+                placeholder="Hallazgos del examen físico..." rows="3"></textarea>
+              ${naBtn('recExam')}
+            </div>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Diagnóstico *</label>
-          <textarea class="form-textarea" id="recDiagnosis"
-            placeholder="Diagnóstico clínico..." rows="2" required></textarea>
+
+        <!-- Fila 3: Resultados de Laboratorio -->
+        <div class="form-group" style="margin-bottom:1rem;">
+          <label class="form-label">Resultados de Laboratorio</label>
+          <div class="lab-checklist">${labChecklist}</div>
+          <input type="hidden" id="recLabResults">
         </div>
-        <div class="form-group">
-          <label class="form-label">Tratamiento *</label>
-          <textarea class="form-textarea" id="recTreatment"
-            placeholder="Plan de tratamiento y medicación..." rows="2" required></textarea>
+
+        <!-- Fila 4: Diagnóstico + Tratamiento -->
+        <div class="grid grid-2" style="margin-bottom:1rem;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Diagnóstico *</label>
+            <textarea class="form-textarea" id="recDiagnosis"
+              placeholder="Diagnóstico clínico..." rows="3" required></textarea>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Tratamiento *</label>
+            <textarea class="form-textarea" id="recTreatment"
+              placeholder="Plan de tratamiento..." rows="3" required></textarea>
+          </div>
         </div>
-        <div class="grid grid-2">
-          <div class="form-group">
+
+        <!-- Fila 5: Medicamentos + Revisión + Vet -->
+        <div class="grid grid-3" style="margin-bottom:1rem;">
+          <div class="form-group" style="margin:0;">
             <label class="form-label">Medicamentos</label>
-            <input type="text" class="form-input" id="recMedications"
-              placeholder="Medicamentos prescritos...">
+            <div class="field-with-na">
+              <input type="text" class="form-input" id="recMedications"
+                placeholder="Medicamentos prescritos...">
+              ${naBtn('recMedications')}
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Resultados de Laboratorio</label>
-            <input type="text" class="form-input" id="recLabResults"
-              placeholder="Hemograma, bioquímica, etc.">
-          </div>
-        </div>
-        <div class="grid grid-2">
-          <div class="form-group">
+          <div class="form-group" style="margin:0;">
             <label class="form-label">Próxima Revisión</label>
             <input type="date" class="form-input" id="recFollowUp">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin:0;">
             <label class="form-label">Veterinario</label>
             <input type="text" class="form-input" id="recVet"
-              value="${window.AuthState?.profile?.name || ''}" readonly
-              style="opacity:0.7;">
+              value="${vetName}" readonly style="opacity:0.7;">
           </div>
         </div>
-        <div class="form-group">
+
+        <!-- Fila 6: Notas -->
+        <div class="form-group" style="margin-bottom:1.5rem;">
           <label class="form-label">Notas adicionales</label>
-          <textarea class="form-textarea" id="recNotes"
-            placeholder="Observaciones, instrucciones para el dueño..." rows="2"></textarea>
+          <div class="field-with-na">
+            <textarea class="form-textarea" id="recNotes"
+              placeholder="Instrucciones para el dueño, observaciones..." rows="2"></textarea>
+            ${naBtn('recNotes')}
+          </div>
         </div>
-        <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+
+        <div style="display:flex;gap:1rem;">
           <button type="submit" class="btn btn-primary" style="flex:1;">
-            💾 Guardar Nota Clínica
+            💾 Guardar Historia Clínica
           </button>
           <button type="button" class="btn btn-secondary" onclick="App.closeModal()">
             Cancelar
@@ -327,7 +388,7 @@ const ClinicalRecords = {
       </form>
     `;
 
-        App.showModal(`Nueva Nota Clínica — ${petName}`, content);
+        App.showModal(`Nueva Nota Clínica — ${petName}`, content, { wide: true });
     },
 
     async saveRecord(event) {
@@ -335,6 +396,22 @@ const ClinicalRecords = {
 
         const pet = this.selectedPet;
         if (!pet) return;
+
+        // Serialize lab checklist
+        const labTests = [
+            'Hemograma completo', 'Bioquímica sérica', 'Urianálisis',
+            'Coproparasitológico', 'Cultivo y antibiograma', 'Citología',
+            'Radiografía', 'Ecografía', 'PCR / Serología', 'Otro'
+        ];
+        const labResults = labTests
+            .map((test, i) => {
+                const cb = document.getElementById(`lab_${i}`);
+                const res = document.getElementById(`labRes_${i}`);
+                if (cb?.checked) return `${test}: ${res?.value.trim() || 'Realizado'}`;
+                return null;
+            })
+            .filter(Boolean)
+            .join(' | ');
 
         const record = {
             patientId:      pet.id,
@@ -346,7 +423,7 @@ const ClinicalRecords = {
             diagnosis:      document.getElementById('recDiagnosis').value.trim(),
             treatment:      document.getElementById('recTreatment').value.trim(),
             medications:    document.getElementById('recMedications').value.trim() || null,
-            labResults:     document.getElementById('recLabResults').value.trim() || null,
+            labResults:     labResults || null,
             notes:          document.getElementById('recNotes').value.trim() || null,
             followUpDate:   document.getElementById('recFollowUp').value || null,
             veterinarian:   document.getElementById('recVet').value.trim() || null
