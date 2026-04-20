@@ -79,6 +79,17 @@ const DB = {
         return data;
     },
 
+    async updatePatient(id, updates) {
+        const { data, error } = await supabase
+            .from('patients')
+            .update({ ...updates, updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .select()
+            .single();
+        if (error) throw new Error(error.message);
+        return data;
+    },
+
     async getPatientsByClient(clientId) {
         const { data, error } = await supabase
             .from('patients')
