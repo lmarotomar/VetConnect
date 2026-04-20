@@ -219,23 +219,61 @@ const Dashboard = {
     showNewClientModal() {
         const content = `
       <form id="newClientForm">
+        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">
+          Datos del propietario y su mascota
+        </p>
+
+        <div style="font-weight: 600; color: var(--brand-green); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-glass);">
+          👤 Propietario
+        </div>
+
         <div class="form-group">
           <label class="form-label">Nombre Completo</label>
-          <input type="text" class="form-input" id="clientName" required>
+          <input type="text" class="form-input" id="clientName" placeholder="Ej: María García" required>
         </div>
-        
+
         <div class="form-group">
           <label class="form-label">Email</label>
-          <input type="email" class="form-input" id="clientEmail" required>
+          <input type="email" class="form-input" id="clientEmail" placeholder="correo@ejemplo.com">
         </div>
-        
+
         <div class="form-group">
           <label class="form-label">Teléfono</label>
-          <input type="tel" class="form-input" id="clientPhone" required>
+          <input type="tel" class="form-input" id="clientPhone" placeholder="+1 555 000 0000" required>
         </div>
-        
+
+        <div style="font-weight: 600; color: var(--brand-green); margin: 1.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-glass);">
+          🐾 Mascota
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Nombre de la Mascota</label>
+            <input type="text" class="form-input" id="petName" placeholder="Ej: Max" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Especie</label>
+            <select class="form-select" id="petSpecies" required>
+              <option value="Perro">Perro</option>
+              <option value="Gato">Gato</option>
+              <option value="Ave">Ave</option>
+              <option value="Conejo">Conejo</option>
+              <option value="Reptil">Reptil</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Raza <span style="color:var(--text-muted)">(opcional)</span></label>
+            <input type="text" class="form-input" id="petBreed" placeholder="Ej: Labrador">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Edad <span style="color:var(--text-muted)">(opcional)</span></label>
+            <input type="text" class="form-input" id="petAge" placeholder="Ej: 3 años">
+          </div>
+        </div>
+
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-          <button type="submit" class="btn btn-primary" style="flex: 1;">Crear Cliente</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1;">Crear Cliente y Mascota</button>
           <button type="button" class="btn btn-secondary" onclick="App.closeModal()">Cancelar</button>
         </div>
       </form>
@@ -244,19 +282,37 @@ const Dashboard = {
         App.showModal('Nuevo Cliente', content);
 
         setTimeout(() => {
-            document.getElementById('newClientForm').addEventListener('submit', (e) => {
+            document.getElementById('newClientForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
 
                 const client = {
                     name: document.getElementById('clientName').value,
-                    email: document.getElementById('clientEmail').value,
+                    email: document.getElementById('clientEmail').value || null,
                     phone: document.getElementById('clientPhone').value
                 };
 
-                App.addClient(client);
-                App.closeModal();
-                App.showNotification('Cliente creado', 'El cliente ha sido creado exitosamente', 'success');
-                this.loadStats();
+                const pet = {
+                    name: document.getElementById('petName').value,
+                    species: document.getElementById('petSpecies').value,
+                    breed: document.getElementById('petBreed').value || null,
+                    age: document.getElementById('petAge').value || null
+                };
+
+                try {
+                    const savedClient = await App.addClient(client);
+                    const clientId = savedClient?.id;
+
+                    if (clientId && typeof DB !== 'undefined') {
+                        await DB.addPatient({ ...pet, clientId });
+                        await App.refreshData('clients');
+                    }
+
+                    App.closeModal();
+                    App.showNotification('Registro completado', `${client.name} y ${pet.name} agregados correctamente`, 'success');
+                    this.loadStats();
+                } catch (err) {
+                    App.showNotification('Error', err.message || 'No se pudo crear el registro', 'error');
+                }
             });
         }, 100);
     },
