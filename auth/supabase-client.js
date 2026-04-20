@@ -122,6 +122,7 @@ async function initSupabase() {
     }
 
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.supabase = supabase; // expose client globally so db.js can use supabase.from()
 
     // Check for existing session
     const { data: { session }, error } = await supabase.auth.getSession();
