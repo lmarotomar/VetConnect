@@ -402,12 +402,24 @@ const Inventory = {
 
   // Data methods (mock data for now)
   getInventoryStats() {
+    const products = this.getProducts();
+    const today = new Date();
+    const in30days = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const totalValue    = products.reduce((sum, p) => sum + ((p.price || 0) * (p.current_stock || p.stock || 0)), 0);
+    const lowStockCount = products.filter(p => (p.current_stock ?? p.stock ?? 0) <= (p.min_stock ?? p.min_quantity ?? 0)).length;
+    const expiringCount = products.filter(p => {
+      if (!p.expiry_date && !p.expiration_date) return false;
+      const exp = new Date(p.expiry_date || p.expiration_date);
+      return exp <= in30days && exp >= today;
+    }).length;
+
     return {
-      totalValue: 125840,
-      totalItems: 143,
-      lowStockCount: 8,
-      expiringCount: 5,
-      todayTransactions: 12
+      totalValue,
+      totalItems: products.length,
+      lowStockCount,
+      expiringCount,
+      todayTransactions: 0
     };
   },
 
