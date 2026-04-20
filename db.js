@@ -4,6 +4,11 @@
 
 const DB = {
 
+    // Returns the current user's organization_id (required for all inserts)
+    _orgId() {
+        return window.AuthState?.organization?.id || null;
+    },
+
     // ─── CLIENTS ──────────────────────────────────────────────────────────────
 
     async getClients() {
@@ -29,6 +34,7 @@ const DB = {
         const { data, error } = await supabase
             .from('clients')
             .insert([{
+                organization_id: this._orgId(),
                 name: client.name,
                 email: client.email,
                 phone: client.phone,
@@ -57,6 +63,7 @@ const DB = {
         const { data, error } = await supabase
             .from('patients')
             .insert([{
+                organization_id: this._orgId(),
                 client_id: patient.clientId,
                 name: patient.name,
                 species: patient.species,
@@ -113,6 +120,7 @@ const DB = {
         const { data, error } = await supabase
             .from('appointments')
             .insert([{
+                organization_id: this._orgId(),
                 client_id: appointment.clientId,
                 patient_id: appointment.petId,
                 appointment_date: appointment.date,
@@ -164,6 +172,7 @@ const DB = {
         const { data, error } = await supabase
             .from('clinical_records')
             .insert([{
+                organization_id: this._orgId(),
                 patient_id: record.patientId,
                 appointment_id: record.appointmentId || null,
                 chief_complaint: record.chiefComplaint || null,
@@ -198,6 +207,7 @@ const DB = {
         const { data, error } = await supabase
             .from('communications')
             .insert([{
+                organization_id: this._orgId(),
                 client_id: communication.clientId,
                 channel: communication.channel,
                 type: communication.type,
@@ -221,10 +231,38 @@ const DB = {
         return data || [];
     },
 
+    // ─── ORGANIZATION ─────────────────────────────────────────────
+
+    async getOrganization() {
+        const orgId = this._orgId();
+        if (!orgId) return null;
+        const { data, error } = await supabase
+            .from('organizations')
+            .select('*')
+            .eq('id', orgId)
+            .single();
+        if (error) console.error('DB.getOrganization:', error.message);
+        return data || null;
+    },
+
+    async updateOrganization(updates) {
+        const orgId = this._orgId();
+        if (!orgId) throw new Error('No organization loaded');
+        const { data, error } = await supabase
+            .from('organizations')
+            .update({ ...updates, updated_at: new Date().toISOString() })
+            .eq('id', orgId)
+            .select()
+            .single();
+        if (error) throw new Error(error.message);
+        return data;
+    },
+
     async addScheduledJob(job) {
         const { data, error } = await supabase
             .from('scheduled_jobs')
             .insert([{
+                organization_id: this._orgId(),
                 job_type: job.type,
                 reference_id: job.referenceId,
                 reference_type: job.referenceType,

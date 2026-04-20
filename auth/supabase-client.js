@@ -158,31 +158,41 @@ async function initSupabase() {
     return true;
 }
 
-// Load user profile and role from database
+// Load user profile, role and organization from user_profiles table
 async function loadUserProfile() {
     if (!AuthState.user) return;
 
     try {
-        // For now, we'll use a simple approach - check if user is the super admin
-        // In production, this would query the user_profiles table
-        const superAdminEmail = 'lmarotomar@biovetai.org';
+        const { data: profile, error } = await _sb
+            .from('user_profiles')
+            .select('*, organization:organizations(*)')
+            .eq('user_id', AuthState.user.id)
+            .single();
 
-        if (AuthState.user.email === superAdminEmail) {
-            AuthState.role = ROLES.SUPER_ADMIN;
-            AuthState.profile = {
-                name: 'Luis Maroto',
-                email: superAdminEmail,
-                role: ROLES.SUPER_ADMIN
-            };
-        } else {
-            // Default role for new users
+        if (error || !profile) {
+            // Fallback: no profile yet (e.g. user registered before migration)
             AuthState.role = ROLES.VIEWER;
+            AuthState.organization = null;
             AuthState.profile = {
                 name: AuthState.user.email?.split('@')[0] || 'Usuario',
                 email: AuthState.user.email,
                 role: ROLES.VIEWER
             };
+            return;
         }
+
+        const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ')
+            || AuthState.user.email?.split('@')[0]
+            || 'Usuario';
+
+        AuthState.role         = profile.role || ROLES.VIEWER;
+        AuthState.organization = profile.organization || null;
+        AuthState.profile      = {
+            name:  fullName,
+            email: AuthState.user.email,
+            role:  profile.role
+        };
+
     } catch (error) {
         console.error('Error loading profile:', error);
     }

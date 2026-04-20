@@ -30,6 +30,7 @@
                         style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px;">
                 </div>
                 <div class="logo-text">VetConnect</div>
+                <div id="clinicNameDisplay" style="font-size: 0.7rem; color: var(--text-muted); margin-top: -4px; padding-left: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;"></div>
             </div>
 
             <nav>
@@ -363,15 +364,16 @@
                 await initSupabase();
             }
 
-            // Authenticated — update user display from stored session
+            // Authenticated — use AuthState profile loaded from user_profiles table
             try {
-                const user = storedSession.user;
-                const profile = {
-                    name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario',
-                    email: user.email,
-                    role: user.user_metadata?.role || 'clinic_admin'
+                const profile = window.AuthState?.profile || {
+                    name: storedSession.user?.user_metadata?.full_name
+                        || storedSession.user?.email?.split('@')[0]
+                        || 'Usuario',
+                    email: storedSession.user?.email,
+                    role: storedSession.user?.user_metadata?.role || 'clinic_admin'
                 };
-                updateUserDisplay(profile);
+                updateUserDisplay(profile, window.AuthState?.organization);
             } catch (e) {
                 console.error('Profile load error:', e);
             }
@@ -383,24 +385,31 @@
         });
 
         // Update user display in header
-        function updateUserDisplay(user) {
+        function updateUserDisplay(user, org) {
             if (!user) return;
 
             const ROLE_LABELS = {
                 'super_admin':  'Super Admin',
                 'clinic_admin': 'Administrador',
                 'veterinarian': 'Veterinario',
-                'receptionist': 'Recepcionista'
+                'technician':   'Técnico',
+                'receptionist': 'Recepcionista',
+                'viewer':       'Solo Lectura'
             };
 
             const initial = (user.name || user.email || 'U').charAt(0).toUpperCase();
             const displayName = user.name || user.email?.split('@')[0] || 'Usuario';
             const role = ROLE_LABELS[user.role] || user.role || 'Administrador';
+            const clinicName = org?.name || '';
 
             document.getElementById('userNameDisplay').textContent = displayName.split(' ')[0];
             document.getElementById('dropdownUserName').textContent = displayName;
             document.getElementById('dropdownUserEmail').textContent = user.email || '';
             document.getElementById('dropdownUserRole').textContent = role;
+
+            // Show clinic name in sidebar if element exists
+            const clinicNameEl = document.getElementById('clinicNameDisplay');
+            if (clinicNameEl && clinicName) clinicNameEl.textContent = clinicName;
 
             const avatarEl = document.querySelector('#userMenuBtn > div');
             if (avatarEl) avatarEl.textContent = initial;
