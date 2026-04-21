@@ -386,6 +386,57 @@ const DB = {
         return data;
     },
 
+    // ─── EDUCATIONAL CONTENT ──────────────────────────────────────────────────
+
+    async getEducationalContent() {
+        const { data, error } = await supabase
+            .from('educational_content')
+            .select('*')
+            .eq('is_active', true)
+            .order('created_at', { ascending: false });
+        if (error) console.error('DB.getEducationalContent:', error.message);
+        return data || [];
+    },
+
+    async addEducationalContent(item) {
+        const { data, error } = await supabase
+            .from('educational_content')
+            .insert([{
+                organization_id: this._orgId(),
+                title:           item.title,
+                category:        item.category,
+                species:         item.species  || [],
+                icon:            item.icon     || '📋',
+                summary:         item.summary,
+                content:         item.content,
+                is_active:       true,
+                created_by:      window.AuthState?.profile?.name || null
+            }])
+            .select()
+            .single();
+        if (error) throw new Error(error.message);
+        return data;
+    },
+
+    async updateEducationalContent(id, updates) {
+        const { data, error } = await supabase
+            .from('educational_content')
+            .update({ ...updates, updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .select()
+            .single();
+        if (error) throw new Error(error.message);
+        return data;
+    },
+
+    async deleteEducationalContent(id) {
+        const { error } = await supabase
+            .from('educational_content')
+            .update({ is_active: false, updated_at: new Date().toISOString() })
+            .eq('id', id);
+        if (error) throw new Error(error.message);
+    },
+
     async addScheduledJob(job) {
         const { data, error } = await supabase
             .from('scheduled_jobs')
