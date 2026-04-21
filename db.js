@@ -245,6 +245,91 @@ const DB = {
         return data || [];
     },
 
+    async addInventoryItem(item) {
+        const { data, error } = await supabase
+            .from('inventory_items')
+            .insert([{
+                organization_id:  this._orgId(),
+                name:             item.name,
+                category:         item.category,
+                description:      item.description  || null,
+                sku:              item.sku           || null,
+                barcode:          item.barcode       || null,
+                current_stock:    item.current_stock || 0,
+                unit:             item.unit          || 'unit',
+                min_stock:        item.min_stock     || 0,
+                max_stock:        item.max_stock     || null,
+                cost_price:       item.cost_price    || 0,
+                sale_price:       item.sale_price    || 0,
+                expiration_date:  item.expiration_date || null,
+                batch_number:     item.batch_number  || null,
+                location:         item.location      || null,
+                is_active:        true
+            }])
+            .select()
+            .single();
+        if (error) throw new Error(error.message);
+        return data;
+    },
+
+    async updateInventoryItem(id, updates) {
+        const { data, error } = await supabase
+            .from('inventory_items')
+            .update({ ...updates, updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .select()
+            .single();
+        if (error) throw new Error(error.message);
+        return data;
+    },
+
+    // ─── INVOICES ─────────────────────────────────────────────────────────────
+
+    async getInvoices() {
+        const { data, error } = await supabase
+            .from('invoices')
+            .select('*, client:clients(id, name, email, phone), patient:patients(id, name)')
+            .order('invoice_date', { ascending: false });
+        if (error) console.error('DB.getInvoices:', error.message);
+        return data || [];
+    },
+
+    async addInvoice(invoice) {
+        const { data, error } = await supabase
+            .from('invoices')
+            .insert([{
+                organization_id:  this._orgId(),
+                client_id:        invoice.client_id,
+                patient_id:       invoice.patient_id       || null,
+                appointment_id:   invoice.appointment_id   || null,
+                invoice_number:   invoice.invoice_number,
+                invoice_date:     invoice.invoice_date,
+                due_date:         invoice.due_date          || null,
+                subtotal:         invoice.subtotal,
+                discount:         invoice.discount          || 0,
+                tax_amount:       invoice.taxAmount         || 0,
+                total:            invoice.total,
+                status:           'pending',
+                notes:            invoice.notes             || null,
+                items:            invoice.items             || []
+            }])
+            .select('*, client:clients(id, name), patient:patients(id, name)')
+            .single();
+        if (error) throw new Error(error.message);
+        return data;
+    },
+
+    async updateInvoice(id, updates) {
+        const { data, error } = await supabase
+            .from('invoices')
+            .update({ ...updates, updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .select()
+            .single();
+        if (error) throw new Error(error.message);
+        return data;
+    },
+
     // ─── ORGANIZATION ─────────────────────────────────────────────
 
     async getOrganization() {

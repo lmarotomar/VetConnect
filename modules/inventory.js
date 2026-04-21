@@ -320,41 +320,45 @@ const Inventory = {
     `;
 
     if (typeof App !== 'undefined') {
-      App.showModal('➕ Nuevo Producto', modalContent, 'large');
+      App.showModal('➕ Nuevo Producto', modalContent, { wide: true });
     }
   },
 
-  saveProduct() {
-    const productData = {
-      name: document.getElementById('productName')?.value,
-      category: document.getElementById('productCategory')?.value,
-      description: document.getElementById('productDescription')?.value,
-      sku: document.getElementById('productSKU')?.value,
-      barcode: document.getElementById('productBarcode')?.value,
-      current_stock: parseFloat(document.getElementById('productStock')?.value) || 0,
-      unit: document.getElementById('productUnit')?.value,
-      min_stock: parseFloat(document.getElementById('productMinStock')?.value) || 0,
-      max_stock: parseFloat(document.getElementById('productMaxStock')?.value) || 0,
-      cost_price: parseFloat(document.getElementById('productCostPrice')?.value) || 0,
-      sale_price: parseFloat(document.getElementById('productSalePrice')?.value) || 0,
-      expiration_date: document.getElementById('productExpiration')?.value,
-      batch_number: document.getElementById('productBatch')?.value,
-      location: document.getElementById('productLocation')?.value
-    };
+  async saveProduct() {
+    const name      = document.getElementById('productName')?.value.trim();
+    const salePrice = parseFloat(document.getElementById('productSalePrice')?.value) || 0;
 
-    if (!productData.name || productData.sale_price <= 0) {
-      if (typeof App !== 'undefined') {
-        App.showNotification('Error', 'Debes completar los campos obligatorios', 'error');
-      }
+    if (!name || salePrice <= 0) {
+      App.showNotification('Error', 'Nombre y precio de venta son obligatorios', 'error');
       return;
     }
 
-    console.log('Saving product:', productData);
+    const productData = {
+      name,
+      category:        document.getElementById('productCategory')?.value,
+      description:     document.getElementById('productDescription')?.value.trim() || null,
+      sku:             document.getElementById('productSKU')?.value.trim()         || null,
+      barcode:         document.getElementById('productBarcode')?.value.trim()     || null,
+      current_stock:   parseFloat(document.getElementById('productStock')?.value)  || 0,
+      unit:            document.getElementById('productUnit')?.value,
+      min_stock:       parseFloat(document.getElementById('productMinStock')?.value)    || 0,
+      max_stock:       parseFloat(document.getElementById('productMaxStock')?.value)    || null,
+      cost_price:      parseFloat(document.getElementById('productCostPrice')?.value)   || 0,
+      sale_price:      salePrice,
+      expiration_date: document.getElementById('productExpiration')?.value || null,
+      batch_number:    document.getElementById('productBatch')?.value.trim()    || null,
+      location:        document.getElementById('productLocation')?.value.trim() || null
+    };
 
-    if (typeof App !== 'undefined') {
-      App.showNotification('Producto Guardado', `${productData.name} agregado al inventario`, 'success');
+    try {
+      const saved = await DB.addInventoryItem(productData);
+      App.data.inventory.push(saved);
       App.closeModal();
-      setTimeout(() => App.loadView('inventory'), 1000);
+      App.showNotification('Producto Guardado', `${name} agregado al inventario`, 'success');
+      App.loadView('inventory');
+    } catch (err) {
+      App.showNotification('Error', `No se pudo guardar: ${err.message}`, 'error');
+      console.error('saveProduct:', err);
     }
   },
 
@@ -392,11 +396,34 @@ const Inventory = {
     }
   },
 
-  saveAdjustment(productId) {
-    if (typeof App !== 'undefined') {
-      App.showNotification('Stock Actualizado', 'El inventario ha sido ajustado', 'success');
+  async saveAdjustment(productId) {
+    const type     = document.getElementById('adjustmentType')?.value;
+    const quantity = parseFloat(document.getElementById('adjustmentQuantity')?.value) || 0;
+
+    if (quantity <= 0) {
+      App.showNotification('Error', 'La cantidad debe ser mayor a 0', 'error');
+      return;
+    }
+
+    const product = this.getProducts().find(p => String(p.id) === String(productId));
+    if (!product) return;
+
+    const isInbound = ['purchase', 'return', 'adjustment'].includes(type);
+    const delta     = isInbound ? quantity : -quantity;
+    const newStock  = Math.max(0, (product.current_stock || 0) + delta);
+
+    try {
+      const saved = await DB.updateInventoryItem(productId, { current_stock: newStock });
+      // Update local cache
+      const idx = App.data.inventory.findIndex(p => String(p.id) === String(productId));
+      if (idx !== -1) App.data.inventory[idx] = { ...App.data.inventory[idx], ...saved };
+
       App.closeModal();
-      setTimeout(() => App.loadView('inventory'), 1000);
+      App.showNotification('Stock Actualizado', `${product.name}: ${product.current_stock} → ${newStock}`, 'success');
+      App.loadView('inventory');
+    } catch (err) {
+      App.showNotification('Error', `No se pudo actualizar el stock: ${err.message}`, 'error');
+      console.error('saveAdjustment:', err);
     }
   },
 
@@ -462,8 +489,8 @@ const Inventory = {
     const products = this.getProducts();
     const filtered = products.filter(product => {
       const matchesSearch = !searchText ||
-        product.name.toLowerCase().includes(searchText) ||
-        product.sku.toLowerCase().includes(searchText);
+        (product.name || '').toLowerCase().includes(searchText) ||
+        (product.sku  || '').toLowerCase().includes(searchText);
 
       const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
 
@@ -607,31 +634,37 @@ const Inventory = {
         `;
 
     if (typeof App !== 'undefined') {
-      App.showModal(`✏️ Editar: ${product.name}`, modalContent, 'large');
+      App.showModal(`✏️ Editar: ${product.name}`, modalContent, { wide: true });
     }
   },
 
-  updateProduct(id) {
-    const updatedData = {
-      id: id,
-      name: document.getElementById('editProductName')?.value,
-      category: document.getElementById('editProductCategory')?.value,
-      sku: document.getElementById('editProductSKU')?.value,
-      current_stock: parseFloat(document.getElementById('editProductStock')?.value) || 0,
-      min_stock: parseFloat(document.getElementById('editProductMinStock')?.value) || 0,
-      max_stock: parseFloat(document.getElementById('editProductMaxStock')?.value) || 0,
-      cost_price: parseFloat(document.getElementById('editProductCostPrice')?.value) || 0,
-      sale_price: parseFloat(document.getElementById('editProductSalePrice')?.value) || 0,
+  async updateProduct(id) {
+    const name = document.getElementById('editProductName')?.value.trim();
+    if (!name) { App.showNotification('Error', 'El nombre es obligatorio', 'error'); return; }
+
+    const updates = {
+      name,
+      category:        document.getElementById('editProductCategory')?.value,
+      sku:             document.getElementById('editProductSKU')?.value.trim() || null,
+      current_stock:   parseFloat(document.getElementById('editProductStock')?.value)       || 0,
+      min_stock:       parseFloat(document.getElementById('editProductMinStock')?.value)     || 0,
+      max_stock:       parseFloat(document.getElementById('editProductMaxStock')?.value)     || null,
+      cost_price:      parseFloat(document.getElementById('editProductCostPrice')?.value)    || 0,
+      sale_price:      parseFloat(document.getElementById('editProductSalePrice')?.value)    || 0,
       expiration_date: document.getElementById('editProductExpiration')?.value || null,
-      batch_number: document.getElementById('editProductBatch')?.value || null
+      batch_number:    document.getElementById('editProductBatch')?.value.trim() || null
     };
 
-    console.log('Updating product:', updatedData);
-
-    if (typeof App !== 'undefined') {
-      App.showNotification('✅ Actualizado', `${updatedData.name} ha sido actualizado`, 'success');
+    try {
+      const saved = await DB.updateInventoryItem(id, updates);
+      const idx = App.data.inventory.findIndex(p => String(p.id) === String(id));
+      if (idx !== -1) App.data.inventory[idx] = { ...App.data.inventory[idx], ...saved };
       App.closeModal();
-      setTimeout(() => App.loadView('inventory'), 500);
+      App.showNotification('Actualizado', `${name} ha sido actualizado`, 'success');
+      App.loadView('inventory');
+    } catch (err) {
+      App.showNotification('Error', `No se pudo actualizar: ${err.message}`, 'error');
+      console.error('updateProduct:', err);
     }
   },
 
@@ -687,7 +720,7 @@ const Inventory = {
         `;
 
     if (typeof App !== 'undefined') {
-      App.showModal(`📊 Historial de Movimientos`, modalContent, 'large');
+      App.showModal(`📊 Historial de Movimientos`, modalContent, { wide: true });
     }
   },
 
@@ -886,7 +919,7 @@ const Inventory = {
         `;
 
     if (typeof App !== 'undefined') {
-      App.showModal('🛒 Órdenes de Compra', modalContent, 'large');
+      App.showModal('🛒 Órdenes de Compra', modalContent, { wide: true });
     }
   },
 

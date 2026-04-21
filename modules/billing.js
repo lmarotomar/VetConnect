@@ -71,7 +71,7 @@ const Billing = {
           <div class="stat-icon" style="background: var(--success-gradient);">💵</div>
         </div>
         <div class="stat-value">$${stats.monthlyRevenue.toLocaleString()}</div>
-        <div class="stat-change positive">+${stats.monthlyGrowth}% vs mes anterior</div>
+        <div class="stat-change ${stats.monthlyGrowth >= 0 ? 'positive' : ''}">${stats.monthlyGrowth > 0 ? '+' : ''}${stats.monthlyGrowth}% vs mes anterior</div>
       </div>
 
       <div class="stat-card">
@@ -100,7 +100,7 @@ const Billing = {
           <div class="stat-icon" style="background: var(--success-gradient);">🎫</div>
         </div>
         <div class="stat-value">$${stats.avgTicket.toLocaleString()}</div>
-        <div class="stat-change positive">+${stats.ticketGrowth}% este mes</div>
+        <div class="stat-change positive">${stats.paidAll > 0 ? `de ${stats.paidAll} facturas` : 'sin facturas pagadas'}</div>
       </div>
     `;
   },
@@ -173,9 +173,9 @@ const Billing = {
     const statusConfig = {
       pending: { label: 'Pendiente', class: 'badge-warning' },
       paid: { label: 'Pagada', class: 'badge-success' },
-      overdue: { label: 'Vencida', class: 'badge-danger' },
+      overdue: { label: 'Vencida', class: 'badge-error' },
       partial: { label: 'Pago Parcial', class: 'badge-info' },
-      cancelled: { label: 'Cancelada', class: 'badge-danger' }
+      cancelled: { label: 'Cancelada', class: 'badge-error' }
     };
 
     const config = statusConfig[status] || statusConfig.pending;
@@ -276,7 +276,7 @@ const Billing = {
     `;
 
     if (typeof App !== 'undefined') {
-      App.showModal('📝 Nueva Factura', modalContent, 'large');
+      App.showModal('📝 Nueva Factura', modalContent, { wide: true });
     }
   },
 
@@ -352,79 +352,79 @@ const Billing = {
     return { subtotal, discount, taxAmount, total };
   },
 
-  saveInvoice(sendEmail = false) {
-    // Validate
+  async saveInvoice(sendEmail = false) {
     const clientId = document.getElementById('invoiceClient')?.value;
     if (!clientId) {
-      if (typeof App !== 'undefined') {
-        App.showNotification('Error', 'Debes seleccionar un cliente', 'error');
-      }
+      App.showNotification('Error', 'Debes seleccionar un cliente', 'error');
       return;
     }
 
-    // Collect invoice data
-    const invoiceData = {
-      client_id: clientId,
-      patient_id: document.getElementById('invoicePet')?.value || null,
-      appointment_id: document.getElementById('invoiceAppointment')?.value || null,
-      invoice_date: document.getElementById('invoiceDate')?.value,
-      due_date: document.getElementById('invoiceDueDate')?.value || null,
-      notes: document.getElementById('invoiceNotes')?.value,
-      items: [],
-      ...this.calculateInvoiceTotal()
-    };
-
-    // Collect items
+    const items = [];
     document.querySelectorAll('.invoice-item-row').forEach(row => {
-      const description = row.querySelector('.item-description').value;
-      const quantity = parseFloat(row.querySelector('.item-quantity').value);
-      const price = parseFloat(row.querySelector('.item-price').value);
-
-      if (description && quantity > 0 && price > 0) {
-        invoiceData.items.push({
-          description,
-          quantity,
-          unit_price: price,
-          total: quantity * price
-        });
+      const description = row.querySelector('.item-description').value.trim();
+      const quantity    = parseFloat(row.querySelector('.item-quantity').value);
+      const price       = parseFloat(row.querySelector('.item-price').value);
+      if (description && quantity > 0 && price >= 0) {
+        items.push({ description, quantity, unit_price: price, total: quantity * price });
       }
     });
 
-    if (invoiceData.items.length === 0) {
-      if (typeof App !== 'undefined') {
-        App.showNotification('Error', 'Debes agregar al menos un servicio o producto', 'error');
-      }
+    if (items.length === 0) {
+      App.showNotification('Error', 'Debes agregar al menos un servicio o producto', 'error');
       return;
     }
 
-    // Save to database (mock for now)
-    console.log('Saving invoice:', invoiceData);
+    const totals = this.calculateInvoiceTotal();
+    const invoiceNumber = this._generateInvoiceNumber();
 
-    if (typeof App !== 'undefined') {
-      App.showNotification(
-        'Factura Creada',
-        `Factura creada exitosamente. Total: $${invoiceData.total.toFixed(2)}`,
-        'success'
-      );
+    const invoiceData = {
+      client_id:      clientId,
+      patient_id:     document.getElementById('invoicePet')?.value || null,
+      appointment_id: document.getElementById('invoiceAppointment')?.value || null,
+      invoice_number: invoiceNumber,
+      invoice_date:   document.getElementById('invoiceDate')?.value,
+      due_date:       document.getElementById('invoiceDueDate')?.value || null,
+      notes:          document.getElementById('invoiceNotes')?.value || null,
+      items,
+      ...totals
+    };
+
+    try {
+      const saved = await DB.addInvoice(invoiceData);
+      // Update local cache
+      const fullInvoice = {
+        ...saved,
+        client_name: App.getClient(clientId)?.name || '',
+        pet_name:    null
+      };
+      App.data.invoices.unshift(fullInvoice);
+
       App.closeModal();
+      App.showNotification('Factura Creada', `${invoiceNumber} — Total: $${totals.total.toFixed(2)}`, 'success');
 
       if (sendEmail) {
-        setTimeout(() => {
-          App.showNotification('Enviada', 'La factura ha sido enviada por WhatsApp y Email', 'success');
-        }, 1000);
+        setTimeout(() => App.showNotification('Enviada', 'La factura ha sido enviada al cliente', 'success'), 800);
       }
+      App.loadView('billing');
+    } catch (err) {
+      App.showNotification('Error', `No se pudo guardar la factura: ${err.message}`, 'error');
+      console.error('saveInvoice:', err);
     }
-
-    // Refresh view
-    setTimeout(() => {
-      if (typeof App !== 'undefined' && App.currentView === 'billing') {
-        App.loadView('billing');
-      }
-    }, 1500);
   },
 
   saveAndSendInvoice() {
     this.saveInvoice(true);
+  },
+
+  _generateInvoiceNumber() {
+    const year = new Date().getFullYear();
+    const existing = (App.data?.invoices || [])
+      .map(inv => {
+        const m = (inv.invoice_number || '').match(/INV-\d{4}-(\d+)/);
+        return m ? parseInt(m[1]) : 0;
+      });
+    const next = (existing.length ? Math.max(...existing) : 0) + 1;
+    return `INV-${year}-${String(next).padStart(4, '0')}`;
   },
 
   loadClientPets() {
@@ -444,24 +444,47 @@ const Billing = {
       pets.map(p => `<option value="${p.id}">${p.name} (${p.species})</option>`).join('');
   },
 
-  // Data methods (mock data for now)
   getFinancialStats() {
-    // No invoices table yet — return zeros until Stripe/billing integration is complete
+    const invoices = this.getRecentInvoices();
+    const today    = new Date().toISOString().split('T')[0];
+    const now      = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
+    const prevMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+
+    const thisMonth = invoices.filter(i => i.invoice_date >= monthStart && i.status === 'paid');
+    const prevMonth = invoices.filter(i => i.invoice_date >= prevMonthStart && i.invoice_date <= prevMonthEnd && i.status === 'paid');
+    const pending   = invoices.filter(i => i.status === 'pending');
+    const todayInv  = invoices.filter(i => i.invoice_date === today);
+
+    const monthlyRevenue = thisMonth.reduce((s, i) => s + (i.total || 0), 0);
+    const prevRevenue    = prevMonth.reduce((s, i) => s + (i.total || 0), 0);
+    const monthlyGrowth  = prevRevenue > 0 ? Math.round(((monthlyRevenue - prevRevenue) / prevRevenue) * 100) : 0;
+    const pendingAmount  = pending.reduce((s, i) => s + (i.total || 0), 0);
+    const todayRevenue   = todayInv.filter(i => i.status === 'paid').reduce((s, i) => s + (i.total || 0), 0);
+
+    const paidAll = invoices.filter(i => i.status === 'paid');
+    const avgTicket = paidAll.length > 0 ? Math.round(paidAll.reduce((s, i) => s + (i.total || 0), 0) / paidAll.length) : 0;
+
     return {
-      monthlyRevenue: 0,
-      monthlyGrowth: 0,
-      pendingCount: 0,
-      pendingAmount: 0,
-      todayRevenue: 0,
-      todayInvoices: 0,
-      avgTicket: 0,
-      ticketGrowth: 0
+      monthlyRevenue,
+      monthlyGrowth,
+      pendingCount:  pending.length,
+      pendingAmount,
+      todayRevenue,
+      todayInvoices: todayInv.length,
+      avgTicket,
+      ticketGrowth:  0
     };
   },
 
   getRecentInvoices() {
-    // No invoices table yet — returns empty until billing module is connected to Supabase
-    return [];
+    const raw = App.data?.invoices || [];
+    return raw.map(inv => ({
+      ...inv,
+      client_name: inv.client?.name || inv.client_name || '',
+      pet_name:    inv.patient?.name || inv.pet_name || null
+    }));
   },
 
   getClients() {
@@ -640,7 +663,7 @@ const Billing = {
         `;
 
     if (typeof App !== 'undefined') {
-      App.showModal(`📄 Factura ${invoice.invoice_number}`, modalContent, 'large');
+      App.showModal(`📄 Factura ${invoice.invoice_number}`, modalContent, { wide: true });
     }
   },
 
@@ -727,19 +750,17 @@ const Billing = {
     }
   },
 
-  markAsPaid(id) {
-    if (confirm('¿Confirmar que esta factura ha sido pagada?')) {
-      // In a real app, this would update the database
-      const invoices = this.getRecentInvoices();
-      const invoice = invoices.find(inv => inv.id === id);
-      if (invoice) {
-        invoice.status = 'paid';
-      }
-
-      if (typeof App !== 'undefined') {
-        App.showNotification('✅ Actualizada', 'Factura marcada como pagada', 'success');
-        setTimeout(() => App.loadView('billing'), 500);
-      }
+  async markAsPaid(id) {
+    try {
+      await DB.updateInvoice(id, { status: 'paid', paid_at: new Date().toISOString() });
+      // Update local cache
+      const inv = App.data.invoices.find(i => String(i.id) === String(id));
+      if (inv) inv.status = 'paid';
+      App.showNotification('Pagada', 'Factura marcada como pagada', 'success');
+      App.loadView('billing');
+    } catch (err) {
+      App.showNotification('Error', 'No se pudo actualizar la factura', 'error');
+      console.error('markAsPaid:', err);
     }
   },
 
@@ -801,7 +822,7 @@ const Billing = {
         `;
 
     if (typeof App !== 'undefined') {
-      App.showModal('📊 Reportes Financieros', modalContent, 'medium');
+      App.showModal('📊 Reportes Financieros', modalContent);
     }
   },
 
