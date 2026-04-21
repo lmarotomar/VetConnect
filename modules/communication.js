@@ -292,7 +292,10 @@ const Communication = {
           </div>` : '';
 
         const pets = this.selectedClient.pets || this.selectedClient.patients || [];
-        const petOptions = pets.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+        const firstPet = pets[0]?.name || '';
+        const petOptions = pets.map(p =>
+            `<option value="${p.name}" ${p.name === firstPet ? 'selected' : ''}>${p.name} (${p.species || p.especie || ''})</option>`
+        ).join('');
 
         const content = `
       <form id="newMessageForm" onsubmit="Communication.sendMessage(event)">
@@ -311,7 +314,7 @@ const Communication = {
         ${pets.length ? `
         <div class="form-group">
           <label class="form-label">Mascota <span style="color:var(--text-muted)">(opcional)</span></label>
-          <select class="form-select" id="messagePet">
+          <select class="form-select" id="messagePet" onchange="Communication._onPetChange(this.value)">
             <option value="">— General —</option>
             ${petOptions}
           </select>
@@ -330,6 +333,15 @@ const Communication = {
       </form>`;
 
         App.showModal(`Mensaje — ${this.selectedClient.name}`, content);
+    },
+
+    _onPetChange(newPetName) {
+        const textarea = document.getElementById('messageContent');
+        if (!textarea || !this._baseTemplate) return;
+
+        textarea.value = newPetName
+            ? this._baseTemplate.replace(/\{mascota\}/g, newPetName)
+            : this._baseTemplate;
     },
 
     async sendMessage(event) {
@@ -369,20 +381,29 @@ const Communication = {
     },
 
     useTemplate(templateId) {
-        const pet = (this.selectedClient?.pets || this.selectedClient?.patients || [])[0];
-        const petName = pet?.name || '{mascota}';
         const clientName = this.selectedClient?.name?.split(' ')[0] || '{nombre}';
+        const pets = this.selectedClient?.pets || this.selectedClient?.patients || [];
+        const firstPet = pets[0]?.name || null;
 
-        const templates = {
+        // Keep {mascota} as a replaceable token — filled dynamically by pet selector
+        const base = {
             confirmation: `Hola ${clientName}, tu cita está confirmada. ¡Te esperamos!`,
             reminder:     `Hola ${clientName}, te recordamos tu cita mañana. Por favor confirma tu asistencia respondiendo este mensaje.`,
-            followup:     `Hola ${clientName}, ¿cómo ha evolucionado ${petName}? Nos gustaría saber de su progreso después de la última consulta.`,
-            results:      `Hola ${clientName}, los resultados de ${petName} están listos. Todo se ve bien. Puedes contactarnos para más detalles.`,
-            instructions: `Hola ${clientName}, aquí están las instrucciones de cuidado post-consulta para ${petName}:\n\n[Agregar instrucciones específicas]`,
-            vaccination:  `Hola ${clientName}, es momento de la próxima vacuna de ${petName}. Por favor agenda tu cita lo antes posible.`
+            followup:     `Hola ${clientName}, ¿cómo ha evolucionado {mascota}? Nos gustaría saber de su progreso después de la última consulta.`,
+            results:      `Hola ${clientName}, los resultados de {mascota} están listos. Todo se ve bien. Puedes contactarnos para más detalles.`,
+            instructions: `Hola ${clientName}, aquí están las instrucciones de cuidado post-consulta para {mascota}:\n\n[Agregar instrucciones específicas]`,
+            vaccination:  `Hola ${clientName}, es momento de la próxima vacuna de {mascota}. Por favor agenda tu cita lo antes posible.`
         };
 
-        this.showNewMessageModal(templates[templateId] || '');
+        // Store base template (with {mascota}) for dynamic pet swap
+        this._baseTemplate = base[templateId] || '';
+
+        // Fill with first pet name immediately
+        const filled = firstPet
+            ? this._baseTemplate.replace(/\{mascota\}/g, firstPet)
+            : this._baseTemplate;
+
+        this.showNewMessageModal(filled);
     },
 
     _renderIntegrationStatus() {
