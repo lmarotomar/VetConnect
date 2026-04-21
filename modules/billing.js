@@ -145,17 +145,17 @@ const Billing = {
                 <td>${this.renderStatusBadge(inv.status)}</td>
                 <td>
                   <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-icon" onclick="Billing.viewInvoice(${inv.id})" title="Ver">
+                    <button class="btn btn-icon" onclick="Billing.viewInvoice('${inv.id}')" title="Ver">
                       👁️
                     </button>
-                    <button class="btn btn-icon" onclick="Billing.downloadPDF(${inv.id})" title="Descargar PDF">
+                    <button class="btn btn-icon" onclick="Billing.downloadPDF('${inv.id}')" title="Descargar PDF">
                       📥
                     </button>
-                    <button class="btn btn-icon" onclick="Billing.sendInvoice(${inv.id})" title="Enviar">
+                    <button class="btn btn-icon" onclick="Billing.sendInvoice('${inv.id}')" title="Enviar">
                       📧
                     </button>
                     ${inv.status === 'pending' ? `
-                      <button class="btn btn-icon" onclick="Billing.markAsPaid(${inv.id})" title="Marcar como pagada">
+                      <button class="btn btn-icon" onclick="Billing.markAsPaid('${inv.id}')" title="Marcar como pagada">
                         ✅
                       </button>
                     ` : ''}
@@ -567,11 +567,11 @@ const Billing = {
                                 <td>${this.renderStatusBadge(inv.status)}</td>
                                 <td>
                                     <div style="display: flex; gap: 0.5rem;">
-                                        <button class="btn btn-icon" onclick="Billing.viewInvoice(${inv.id})" title="Ver">👁️</button>
-                                        <button class="btn btn-icon" onclick="Billing.downloadPDF(${inv.id})" title="Descargar PDF">📥</button>
-                                        <button class="btn btn-icon" onclick="Billing.sendInvoice(${inv.id})" title="Enviar">📧</button>
+                                        <button class="btn btn-icon" onclick="Billing.viewInvoice('${inv.id}')" title="Ver">👁️</button>
+                                        <button class="btn btn-icon" onclick="Billing.downloadPDF('${inv.id}')" title="Descargar PDF">📥</button>
+                                        <button class="btn btn-icon" onclick="Billing.sendInvoice('${inv.id}')" title="Enviar">📧</button>
                                         ${inv.status === 'pending' ? `
-                                            <button class="btn btn-icon" onclick="Billing.markAsPaid(${inv.id})" title="Marcar como pagada">✅</button>
+                                            <button class="btn btn-icon" onclick="Billing.markAsPaid('${inv.id}')" title="Marcar como pagada">✅</button>
                                         ` : ''}
                                     </div>
                                 </td>
@@ -656,7 +656,7 @@ const Billing = {
                 <div style="display: flex; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-glass);">
                     <button class="btn btn-primary" onclick="Billing.downloadPDF(${id})">📥 Descargar PDF</button>
                     <button class="btn btn-secondary" onclick="Billing.sendInvoice(${id})">📧 Enviar al Cliente</button>
-                    ${invoice.status === 'pending' ? `<button class="btn btn-success" onclick="Billing.markAsPaid(${id}); App.closeModal();">✅ Marcar Pagada</button>` : ''}
+                    ${invoice.status === 'pending' ? `<button class="btn btn-success" onclick="Billing.markAsPaid('${id}'); App.closeModal();">✅ Marcar Pagada</button>` : ''}
                     <button class="btn btn-secondary" onclick="App.closeModal()">Cerrar</button>
                 </div>
             </div>
