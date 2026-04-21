@@ -82,10 +82,10 @@ const Communication = {
       <div class="card mt-lg">
         <div class="card-header">
           <h3 class="card-title">📝 Plantillas de Mensajes</h3>
-          <span class="text-muted" style="font-size:0.8rem;">Haz clic para usar en un mensaje nuevo</span>
+          <span class="text-muted" style="font-size:0.8rem;" id="templateHint">Selecciona un cliente para personalizar</span>
         </div>
         <div class="card-body">
-          <div class="grid grid-3">
+          <div class="grid grid-3" id="templateCards">
             ${Communication._templateCards()}
           </div>
         </div>
@@ -107,25 +107,40 @@ const Communication = {
     },
 
     _templateCards() {
+        const client   = this.selectedClient;
+        const nombre   = client?.name?.split(' ')[0] || null;
+        const pet      = (client?.pets || client?.patients || [])[0];
+        const mascota  = pet?.name || null;
+
+        const fill = (text) => {
+            if (!client) return text; // keep placeholders if no client selected
+            return text
+                .replace(/\{nombre\}/g,   nombre   || '{nombre}')
+                .replace(/\{mascota\}/g,  mascota  || '{mascota}');
+        };
+
         const templates = [
             { id: 'confirmation', icon: '✅', title: 'Confirmación de Cita',
-              preview: 'Hola {nombre}, tu cita está confirmada para el {fecha} a las {hora}.' },
+              preview: fill('Hola {nombre}, tu cita está confirmada para el {fecha} a las {hora}.') },
             { id: 'reminder',     icon: '⏰', title: 'Recordatorio',
-              preview: 'Te recordamos tu cita mañana a las {hora}. Confirma tu asistencia.' },
+              preview: fill('Hola {nombre}, te recordamos tu cita mañana. Confirma tu asistencia.') },
             { id: 'followup',     icon: '🔄', title: 'Seguimiento',
-              preview: '¿Cómo ha evolucionado {mascota}? Nos gustaría saber de su progreso.' },
+              preview: fill('Hola {nombre}, ¿cómo ha evolucionado {mascota}? Nos gustaría saber de su progreso.') },
             { id: 'results',      icon: '📋', title: 'Resultados Listos',
-              preview: 'Los resultados de {mascota} están listos. Todo se ve bien.' },
+              preview: fill('Hola {nombre}, los resultados de {mascota} están listos. Todo se ve bien.') },
             { id: 'instructions', icon: '📄', title: 'Instrucciones Post-Consulta',
-              preview: 'Instrucciones de cuidado post-consulta para {mascota}: {instrucciones}.' },
+              preview: fill('Hola {nombre}, aquí las instrucciones de cuidado post-consulta para {mascota}.') },
             { id: 'vaccination',  icon: '💉', title: 'Recordatorio de Vacuna',
-              preview: 'Es momento de la vacuna de {mascota}. Agenda tu cita.' }
+              preview: fill('Hola {nombre}, es momento de la próxima vacuna de {mascota}. Agenda tu cita.') }
         ];
+
+        const disabled = !client;
         return templates.map(t => `
-          <div onclick="Communication.useTemplate('${t.id}')"
+          <div onclick="${disabled ? 'App.showNotification(\'Selecciona un cliente\',\'Primero selecciona un cliente de la lista\',\'warning\')' : `Communication.useTemplate('${t.id}')`}"
             style="padding:1rem;background:var(--bg-glass);border-radius:var(--radius-md);
-              cursor:pointer;transition:opacity 0.2s;" onmouseover="this.style.opacity=0.8"
-              onmouseout="this.style.opacity=1">
+              cursor:pointer;opacity:${disabled ? 0.5 : 1};transition:opacity 0.2s;"
+            onmouseover="this.style.opacity=${disabled ? 0.5 : 0.8}"
+            onmouseout="this.style.opacity=${disabled ? 0.5 : 1}">
             <div style="font-size:2rem;margin-bottom:0.5rem;">${t.icon}</div>
             <strong>${t.title}</strong>
             <p class="text-muted" style="font-size:0.8rem;margin-top:0.5rem;">"${t.preview}"</p>
@@ -133,6 +148,7 @@ const Communication = {
     },
 
     init() {
+        this.selectedClient = null; // reset on each visit
         this.loadStats();
         this.loadClients();
         this._renderIntegrationStatus();
@@ -190,11 +206,21 @@ const Communication = {
     selectClient(clientId) {
         this.selectedClient = App.getClient(clientId);
         if (!this.selectedClient) return;
-        this.loadClients(); // re-render to update selection highlight
+        this.loadClients();
         this.loadCommunicationHistory();
 
         const title = document.getElementById('historyTitle');
         if (title) title.textContent = `Historial — ${this.selectedClient.name}`;
+
+        // Refresh template cards with client data
+        const tplContainer = document.getElementById('templateCards');
+        if (tplContainer) tplContainer.innerHTML = this._templateCards();
+        const hint = document.getElementById('templateHint');
+        if (hint) {
+            const pet = (this.selectedClient.pets || this.selectedClient.patients || [])[0];
+            hint.textContent = `Personalizado para ${this.selectedClient.name}${pet ? ` y ${pet.name}` : ''} — haz clic para usar`;
+            hint.style.color = 'var(--brand-green)';
+        }
     },
 
     loadCommunicationHistory() {
