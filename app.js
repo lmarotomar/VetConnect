@@ -144,7 +144,7 @@ const App = {
                 if (typeof Reports !== 'undefined') { container.innerHTML = Reports.render(); Reports.init(); }
                 break;
             case 'settings':
-                if (typeof Settings !== 'undefined') container.innerHTML = Settings.render();
+                if (typeof Settings !== 'undefined') { container.innerHTML = Settings.render(); Settings.init(); }
                 break;
         }
     },

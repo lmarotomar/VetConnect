@@ -1,15 +1,15 @@
-// Settings Module for VetConnect
-
+// Settings Module — VetConnect
 const Settings = {
-  render() {
-    return `
+
+    render() {
+        return `
       <div class="settings-container">
         <div class="mb-lg">
-          <h2 class="card-title" style="font-size: 1.5rem; margin-bottom: 0.5rem;">Configuración</h2>
-          <p style="color: var(--text-muted);">Gestiona tu cuenta, clínica y preferencias del sistema</p>
+          <h2 class="card-title" style="font-size:1.5rem;margin-bottom:0.5rem;">Configuración</h2>
+          <p style="color:var(--text-muted);">Gestiona tu cuenta, clínica e integraciones</p>
         </div>
 
-        <!-- Profile Settings -->
+        <!-- Perfil de Usuario -->
         <div class="card mb-lg">
           <div class="card-header">
             <h3 class="card-title">👤 Perfil de Usuario</h3>
@@ -17,29 +17,30 @@ const Settings = {
           <div class="card-body">
             <div class="grid grid-2">
               <div class="form-group">
-                <label class="form-label">Nombre Completo</label>
-                <input type="text" class="form-input" value="Luis Maroto" id="settingsName">
+                <label class="form-label">Nombre</label>
+                <input type="text" class="form-input" id="settingsFirstName" placeholder="Nombre">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Apellido</label>
+                <input type="text" class="form-input" id="settingsLastName" placeholder="Apellido">
               </div>
               <div class="form-group">
                 <label class="form-label">Email</label>
-                <input type="email" class="form-input" value="lmarotomar@biovetai.org" id="settingsEmail">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Teléfono</label>
-                <input type="tel" class="form-input" value="+1 234 567 8900" id="settingsPhone">
+                <input type="email" class="form-input" id="settingsEmail" disabled
+                  style="opacity:0.6;" title="El email no se puede cambiar aquí">
               </div>
               <div class="form-group">
                 <label class="form-label">Rol</label>
-                <input type="text" class="form-input" value="Administrador" disabled>
+                <input type="text" class="form-input" id="settingsRole" disabled style="opacity:0.6;">
               </div>
             </div>
             <button class="btn btn-primary mt-md" onclick="Settings.saveProfile()">
-              Guardar Cambios
+              💾 Guardar Perfil
             </button>
           </div>
         </div>
 
-        <!-- Clinic Settings -->
+        <!-- Información de la Clínica -->
         <div class="card mb-lg">
           <div class="card-header">
             <h3 class="card-title">🏥 Información de la Clínica</h3>
@@ -48,362 +49,343 @@ const Settings = {
             <div class="grid grid-2">
               <div class="form-group">
                 <label class="form-label">Nombre de la Clínica</label>
-                <input type="text" class="form-input" value="Clínica Veterinaria Demo" id="clinicName">
+                <input type="text" class="form-input" id="clinicName" placeholder="Mi Clínica Veterinaria">
               </div>
               <div class="form-group">
-                <label class="form-label">Sitio Web</label>
-                <input type="url" class="form-input" placeholder="https://ejemplo.com" id="clinicWebsite">
+                <label class="form-label">Teléfono</label>
+                <input type="tel" class="form-input" id="clinicPhone" placeholder="+1 555 000 0000">
               </div>
               <div class="form-group">
                 <label class="form-label">Dirección</label>
-                <input type="text" class="form-input" placeholder="Calle Principal 123" id="clinicAddress">
+                <input type="text" class="form-input" id="clinicAddress" placeholder="Calle Principal 123">
               </div>
               <div class="form-group">
-                <label class="form-label">Teléfono de Contacto</label>
-                <input type="tel" class="form-input" placeholder="+1 234 567 8900" id="clinicPhone">
+                <label class="form-label">Sitio Web</label>
+                <input type="url" class="form-input" id="clinicWebsite" placeholder="https://miclínica.com">
               </div>
             </div>
             <button class="btn btn-primary mt-md" onclick="Settings.saveClinic()">
-              Guardar Información
+              💾 Guardar Clínica
             </button>
           </div>
         </div>
 
-        <!-- Subscription & Billing -->
-        <div class="card mb-lg">
-          <div class="card-header">
-            <h3 class="card-title">💎 Suscripción y Facturación</h3>
-          </div>
-          <div class="card-body">
-            <div style="background: var(--bg-glass); padding: 1.5rem; border-radius: var(--radius-md); margin-bottom: 1.5rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <div>
-                  <div style="font-size: 1.25rem; font-weight: 700; color: var(--brand-gold);">Plan Premium</div>
-                  <div style="color: var(--text-muted); font-size: 0.875rem;">Acceso completo a todas las funcionalidades</div>
-                </div>
-                <div style="text-align: right;">
-                  <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);">$79</div>
-                  <div style="color: var(--text-muted); font-size: 0.875rem;">USD/mes</div>
-                </div>
-              </div>
-              <div style="padding: 0.75rem; background: rgba(37, 75, 65, 0.2); border-radius: var(--radius-sm); margin-bottom: 1rem;">
-                <div style="font-size: 0.875rem;">
-                  <strong>Próximo pago:</strong> 7 de enero de 2026
-                </div>
-              </div>
-              <div style="display: flex; gap: 1rem;">
-                <a href="pricing.html" class="btn btn-secondary">Ver Planes</a>
-                <button class="btn btn-secondary" onclick="Settings.manageBilling()">Gestionar Facturación</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Notification Preferences -->
-        <div class="card mb-lg">
-          <div class="card-header">
-            <h3 class="card-title">🔔 Preferencias de Notificaciones</h3>
-          </div>
-          <div class="card-body">
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-              <label style="display: flex; align-items: center; gap: 1rem; cursor: pointer; padding: 0.75rem; background: var(--bg-glass); border-radius: var(--radius-sm);">
-                <input type="checkbox" checked id="notifEmail">
-                <div>
-                  <div style="font-weight: 600;">Notificaciones por Email</div>
-                  <div style="font-size: 0.875rem; color: var(--text-muted);">Recibir actualizaciones importantes por correo</div>
-                </div>
-              </label>
-              <label style="display: flex; align-items: center; gap: 1rem; cursor: pointer; padding: 0.75rem; background: var(--bg-glass); border-radius: var(--radius-sm);">
-                <input type="checkbox" checked id="notifWhatsApp">
-                <div>
-                  <div style="font-weight: 600;">Notificaciones por WhatsApp</div>
-                  <div style="font-size: 0.875rem; color: var(--text-muted);">Alertas de citas y recordatorios</div>
-                </div>
-              </label>
-              <label style="display: flex; align-items: center; gap: 1rem; cursor: pointer; padding: 0.75rem; background: var(--bg-glass); border-radius: var(--radius-sm);">
-                <input type="checkbox" checked id="notifAppointment">
-                <div>
-                  <div style="font-weight: 600;">Recordatorios de Citas</div>
-                  <div style="font-size: 0.875rem; color: var(--text-muted);">24h y 2h antes de cada cita</div>
-                </div>
-              </label>
-            </div>
-            <button class="btn btn-primary mt-md" onclick="Settings.saveNotifications()">
-              Guardar Preferencias
-            </button>
-          </div>
-        </div>
-
-        <!-- Integrations -->
+        <!-- Integraciones -->
         <div class="card mb-lg">
           <div class="card-header">
             <h3 class="card-title">🔌 Integraciones</h3>
           </div>
-          <div class="card-body">
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-              ${this.renderIntegrationCard('WhatsApp Business', '✅ Conectado', 'success')}
-              ${this.renderIntegrationCard('HubSpot CRM', '✅ Conectado', 'success')}
-              ${this.renderIntegrationCard('Google Calendar', '⚠️ No configurado', 'warning')}
-              ${this.renderIntegrationCard('SendGrid Email', '✅ Conectado', 'success')}
-            </div>
+          <div class="card-body" id="integrationsBody">
+            <p class="text-muted">Cargando...</p>
           </div>
         </div>
 
-        <!-- Danger Zone -->
-        <div class="card" style="border-color: var(--accent-coral);">
+        <!-- Suscripción -->
+        <div class="card mb-lg">
           <div class="card-header">
-            <h3 class="card-title" style="color: var(--accent-coral);">⚠️ Zona de Peligro</h3>
+            <h3 class="card-title">💎 Suscripción</h3>
           </div>
           <div class="card-body">
-            <p style="color: var(--text-muted); margin-bottom: 1rem;">
-              Estas acciones son permanentes y no se pueden deshacer.
+            <div style="background:var(--bg-glass);padding:1.5rem;border-radius:var(--radius-md);">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                <div>
+                  <div style="font-size:1.1rem;font-weight:700;color:var(--brand-gold);">Plan Activo</div>
+                  <div style="color:var(--text-muted);font-size:0.875rem;">Período de prueba — acceso completo</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:1.5rem;font-weight:700;">Beta</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:1rem;">
+                <a href="pricing.html" class="btn btn-secondary">Ver Planes</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Zona de Peligro -->
+        <div class="card" style="border-color:var(--accent-coral);">
+          <div class="card-header">
+            <h3 class="card-title" style="color:var(--accent-coral);">⚠️ Zona de Peligro</h3>
+          </div>
+          <div class="card-body">
+            <p style="color:var(--text-muted);margin-bottom:1rem;">
+              Estas acciones son permanentes e irreversibles.
             </p>
-            <div style="display: flex; gap: 1rem;">
-              <button class="btn" style="background: rgba(255, 107, 107, 0.2); color: var(--accent-coral);" onclick="Settings.exportData()">
-                📦 Exportar Todos los Datos
-              </button>
-              <button class="btn" style="background: rgba(255, 107, 107, 0.3); color: white;" onclick="Settings.deleteAccount()">
-                🗑️ Eliminar Cuenta
+            <div style="display:flex;gap:1rem;">
+              <button class="btn" style="background:rgba(255,107,107,0.2);color:var(--accent-coral);"
+                onclick="Settings.exportData()">
+                📦 Exportar Datos
               </button>
             </div>
           </div>
         </div>
       </div>
     `;
-  },
+    },
 
-  renderIntegrationCard(name, status, type) {
-    const statusColors = {
-      success: 'var(--brand-green)',
-      warning: 'var(--brand-gold)',
-      danger: 'var(--accent-coral)'
-    };
+    async init() {
+        this._loadProfile();
+        await this._loadClinic();
+        this._renderIntegrations();
+    },
 
-    const integrationId = name.toLowerCase().replace(/\s+/g, '-');
+    // ─── PERFIL ──────────────────────────────────────────────────────────────
 
-    return `
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--bg-glass); border-radius: var(--radius-sm);">
-        <div>
-          <div style="font-weight: 600;">${name}</div>
-          <div style="font-size: 0.875rem; color: ${statusColors[type]};">${status}</div>
-        </div>
-        <button class="btn btn-secondary" style="padding: 0.5rem 1rem;" onclick="Settings.configureIntegration('${integrationId}', '${name}')">
-          Configurar
-        </button>
-      </div>
-    `;
-  },
+    _loadProfile() {
+        const profile = window.AuthState?.profile;
+        const name    = profile?.name || '';
+        const parts   = name.split(' ');
+        const roleLabels = {
+            super_admin: 'Super Administrador', clinic_admin: 'Administrador',
+            veterinarian: 'Veterinario', technician: 'Técnico',
+            receptionist: 'Recepcionista', viewer: 'Solo Lectura'
+        };
 
-  configureIntegration(id, name) {
-    const integrationConfigs = {
-      'whatsapp-business': {
-        title: '📱 WhatsApp Business API',
-        content: `
-          <div class="form-group">
-            <label class="form-label">Número de Teléfono</label>
-            <input type="tel" class="form-input" value="+1 234 567 8900" placeholder="+1 234 567 8900">
-            <small style="color: var(--text-muted); font-size: 0.75rem;">Número verificado en WhatsApp Business</small>
-          </div>
-          <div class="form-group">
-            <label class="form-label">API Key (Twilio)</label>
-            <input type="password" class="form-input" value="sk_live_••••••••••••••••" placeholder="sk_live_...">
-          </div>
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+        set('settingsFirstName', parts[0] || '');
+        set('settingsLastName',  parts.slice(1).join(' ') || '');
+        set('settingsEmail',     profile?.email || '');
+        set('settingsRole',      roleLabels[profile?.role] || profile?.role || '');
+    },
+
+    async saveProfile() {
+        const firstName = document.getElementById('settingsFirstName').value.trim();
+        const lastName  = document.getElementById('settingsLastName').value.trim();
+        if (!firstName) { App.showNotification('Error', 'El nombre es obligatorio', 'error'); return; }
+
+        try {
+            const userId = window.AuthState?.user?.id;
+            if (userId && typeof supabase !== 'undefined') {
+                await supabase
+                    .from('user_profiles')
+                    .update({ first_name: firstName, last_name: lastName, updated_at: new Date().toISOString() })
+                    .eq('user_id', userId);
+            }
+            // Update local AuthState
+            if (window.AuthState?.profile) {
+                window.AuthState.profile.name = [firstName, lastName].filter(Boolean).join(' ');
+            }
+            // Update header display
+            if (typeof updateUserDisplay === 'function') {
+                updateUserDisplay(window.AuthState.profile, window.AuthState.organization);
+            }
+            App.showNotification('Perfil actualizado', 'Tus datos han sido guardados', 'success');
+        } catch (err) {
+            App.showNotification('Error', 'No se pudo guardar el perfil', 'error');
+            console.error('saveProfile:', err);
+        }
+    },
+
+    // ─── CLÍNICA ─────────────────────────────────────────────────────────────
+
+    async _loadClinic() {
+        const org = window.AuthState?.organization;
+        if (!org) return;
+
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+        set('clinicName',    org.name);
+        set('clinicPhone',   org.phone);
+        set('clinicAddress', org.address);
+        set('clinicWebsite', org.website);
+    },
+
+    async saveClinic() {
+        const updates = {
+            name:    document.getElementById('clinicName').value.trim(),
+            phone:   document.getElementById('clinicPhone').value.trim() || null,
+            address: document.getElementById('clinicAddress').value.trim() || null,
+            website: document.getElementById('clinicWebsite').value.trim() || null
+        };
+
+        if (!updates.name) { App.showNotification('Error', 'El nombre de la clínica es obligatorio', 'error'); return; }
+
+        try {
+            const saved = await DB.updateOrganization(updates);
+            if (window.AuthState) window.AuthState.organization = { ...window.AuthState.organization, ...saved };
+            // Update sidebar clinic name
+            const clinicEl = document.getElementById('clinicNameDisplay');
+            if (clinicEl) clinicEl.textContent = updates.name;
+            App.showNotification('Clínica actualizada', 'Los datos han sido guardados', 'success');
+        } catch (err) {
+            App.showNotification('Error', 'No se pudo guardar la información', 'error');
+            console.error('saveClinic:', err);
+        }
+    },
+
+    // ─── INTEGRACIONES ────────────────────────────────────────────────────────
+
+    _renderIntegrations() {
+        const org = window.AuthState?.organization || {};
+        const integrations = [
+            {
+                id:    'whatsapp',
+                name:  'WhatsApp Business (Twilio)',
+                icon:  '📱',
+                active: !!(org.twilio_sid && org.twilio_auth_token && org.twilio_phone)
+            },
+            {
+                id:    'email',
+                name:  'SendGrid Email',
+                icon:  '📧',
+                active: !!(org.sendgrid_key && org.sender_email)
+            },
+            {
+                id:    'calendar',
+                name:  'Google Calendar',
+                icon:  '📅',
+                active: false,
+                soon:  true
+            }
+        ];
+
+        const body = document.getElementById('integrationsBody');
+        if (!body) return;
+
+        body.innerHTML = `<div style="display:flex;flex-direction:column;gap:1rem;">
+          ${integrations.map(i => `
+            <div style="display:flex;justify-content:space-between;align-items:center;
+              padding:1rem;background:var(--bg-glass);border-radius:var(--radius-sm);">
+              <div>
+                <div style="font-weight:600;">${i.icon} ${i.name}</div>
+                <div style="font-size:0.875rem;color:${i.active ? 'var(--brand-green)' : 'var(--text-muted)'};">
+                  ${i.active ? '✅ Conectado' : i.soon ? '🔜 Próximamente' : '⚪ No configurado'}
+                </div>
+              </div>
+              ${i.soon
+                ? `<span class="badge" style="background:var(--bg-glass);color:var(--text-muted);">v2</span>`
+                : `<button class="btn btn-secondary" onclick="Settings.configureIntegration('${i.id}')">
+                    ${i.active ? 'Editar' : 'Configurar'}
+                   </button>`
+              }
+            </div>`).join('')}
+        </div>`;
+    },
+
+    configureIntegration(id) {
+        const org = window.AuthState?.organization || {};
+        let title, content;
+
+        if (id === 'whatsapp') {
+            title = '📱 WhatsApp Business (Twilio)';
+            content = `
+          <p class="text-muted" style="font-size:0.875rem;margin-bottom:1.5rem;">
+            Necesitas una cuenta Twilio con WhatsApp Business habilitado.
+          </p>
           <div class="form-group">
             <label class="form-label">Account SID</label>
-            <input type="text" class="form-input" value="AC••••••••••••••••••••••••••••••" placeholder="ACxxxxx...">
+            <input type="text" class="form-input" id="int_twilio_sid"
+              value="${org.twilio_sid || ''}" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
           </div>
           <div class="form-group">
             <label class="form-label">Auth Token</label>
-            <input type="password" class="form-input" value="••••••••••••••••••••••••••••••" placeholder="Auth Token">
-          </div>
-          <div style="padding: 1rem; background: rgba(46, 90, 79, 0.2); border-radius: var(--radius-sm); margin-top: 1rem;">
-            <div style="font-size: 0.875rem;">
-              <strong>Estado de Conexión:</strong> <span style="color: var(--brand-green);">✅ Conectado</span>
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
-              Última sincronización: hace 5 minutos
-            </div>
-          </div>
-        `
-      },
-      'hubspot-crm': {
-        title: '🔄 HubSpot CRM',
-        content: `
-          <div class="form-group">
-            <label class="form-label">API Key</label>
-            <input type="password" class="form-input" value="pat-na1-••••••••••••••••" placeholder="pat-na1-...">
+            <input type="password" class="form-input" id="int_twilio_token"
+              value="${org.twilio_auth_token ? '••••••••••••••••' : ''}" placeholder="Tu Auth Token de Twilio">
           </div>
           <div class="form-group">
-            <label class="form-label">Portal ID</label>
-            <input type="text" class="form-input" value="12345678" placeholder="12345678">
+            <label class="form-label">Número WhatsApp (formato E.164)</label>
+            <input type="tel" class="form-input" id="int_twilio_phone"
+              value="${org.twilio_phone || ''}" placeholder="+15550000000">
           </div>
-          <div class="form-group">
-            <label class="form-label">Webhook URL</label>
-            <input type="url" class="form-input" value="https://vetconnect.app/webhooks/hubspot" readonly>
-            <small style="color: var(--text-muted); font-size: 0.75rem;">Configura este URL en HubSpot Webhooks</small>
-          </div>
-          <div style="margin-top: 1rem;">
-            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-              <input type="checkbox" checked>
-              <span style="font-size: 0.875rem;">Sincronización bidireccional automática</span>
-            </label>
-          </div>
-          <div style="padding: 1rem; background: rgba(46, 90, 79, 0.2); border-radius: var(--radius-sm); margin-top: 1rem;">
-            <div style="font-size: 0.875rem;">
-              <strong>Estado de Conexión:</strong> <span style="color: var(--brand-green);">✅ Activo</span>
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
-              347 contactos sincronizados
-            </div>
-          </div>
-        `
-      },
-      'google-calendar': {
-        title: '📅 Google Calendar',
-        content: `
-          <div style="padding: 1rem; background: rgba(194, 173, 125, 0.1); border: 1px solid var(--brand-gold); border-radius: var(--radius-sm); margin-bottom: 1rem;">
-            <div style="font-size: 0.875rem; color: var(--brand-gold);">
-              ⚠️ Configuración requerida
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
-              Conecta tu cuenta de Google para sincronizar citas automáticamente
-            </div>
-          </div>
-          <button class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
-            🔐 Conectar con Google
-          </button>
-          <div class="form-group">
-            <label class="form-label">Calendar ID</label>
-            <input type="text" class="form-input" placeholder="primary" value="primary">
-            <small style="color: var(--text-muted); font-size: 0.75rem;">El ID del calendario a sincronizar</small>
-          </div>
-          <div style="margin-top: 1rem;">
-            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-              <input type="checkbox" checked>
-              <span style="font-size: 0.875rem;">Enviar invitaciones automáticas</span>
-            </label>
-            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-top: 0.5rem;">
-              <input type="checkbox" checked>
-              <span style="font-size: 0.875rem;">Sincronización bidireccional</span>
-            </label>
-          </div>
-        `
-      },
-      'sendgrid-email': {
-        title: '✉️ SendGrid Email',
-        content: `
-          <div class="form-group">
-            <label class="form-label">API Key</label>
-            <input type="password" class="form-input" value="SG.••••••••••••••••••••••••••••" placeholder="SG.xxxxx...">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Email de Remitente</label>
-            <input type="email" class="form-input" value="lmarotomar@biovetai.org" placeholder="noreply@tudominio.com">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Nombre de Remitente</label>
-            <input type="text" class="form-input" value="VetConnect" placeholder="Tu Clínica">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Template ID (Recordatorios)</label>
-            <input type="text" class="form-input" value="d-1234567890abcdef" placeholder="d-...">
-          </div>
-          <div style="padding: 1rem; background: rgba(46, 90, 79, 0.2); border-radius: var(--radius-sm); margin-top: 1rem;">
-            <div style="font-size: 0.875rem;">
-              <strong>Estado de Conexión:</strong> <span style="color: var(--brand-green);">✅ Verificado</span>
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
-              1,243 emails enviados este mes
-            </div>
-          </div>
-        `
-      }
-    };
-
-    const config = integrationConfigs[id];
-    if (config && typeof App !== 'undefined') {
-      App.showModal(config.title, config.content + `
-        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-glass);">
-          <button class="btn btn-primary" onclick="Settings.saveIntegration('${id}')">Guardar Configuración</button>
-          <button class="btn btn-secondary" onclick="Settings.testIntegration('${id}')">Probar Conexión</button>
-        </div>
-      `);
-    }
-  },
-
-  saveIntegration(id) {
-    if (typeof App !== 'undefined') {
-      App.showNotification('Configuración Guardada', `La integración ha sido actualizada correctamente`, 'success');
-      App.closeModal();
-    }
-  },
-
-  testIntegration(id) {
-    if (typeof App !== 'undefined') {
-      App.showNotification('Probando Conexión', 'Verificando credenciales...', 'info');
-      setTimeout(() => {
-        App.showNotification('Conexión Exitosa', 'La integración está funcionando correctamente', 'success');
-      }, 2000);
-    }
-  },
-
-  saveProfile() {
-    if (typeof App !== 'undefined') {
-      App.showNotification('Perfil Actualizado', 'Tus cambios han sido guardados correctamente', 'success');
-    }
-  },
-
-  saveClinic() {
-    if (typeof App !== 'undefined') {
-      App.showNotification('Información Guardada', 'Los datos de la clínica han sido actualizados', 'success');
-    }
-  },
-
-  saveNotifications() {
-    if (typeof App !== 'undefined') {
-      App.showNotification('Preferencias Guardadas', 'Tus preferencias de notificación han sido actualizadas', 'success');
-    }
-  },
-
-  manageBilling() {
-    if (typeof App !== 'undefined') {
-      App.showModal('Gestionar Facturación', `
-        <p>Portal de facturación (integración con Stripe)</p>
-        <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 1rem;">
-          En producción, esto abriría el portal de facturación de Stripe donde puedes:
-        </p>
-        <ul style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.5rem;">
-          <li>Actualizar métodos de pago</li>
-          <li>Ver historial de facturas</li>
-          <li>Descargar recibos</li>
-          <li>Cancelar suscripción</li>
-        </ul>
-      `);
-    }
-  },
-
-  exportData() {
-    if (confirm('¿Estás seguro de que deseas exportar todos tus datos? Se creará un archivo descargable.')) {
-      if (typeof App !== 'undefined') {
-        App.showNotification('Exportación Iniciada', 'Preparando tus datos para descarga...', 'info');
-        // En producción, esto iniciaría la exportación
-      }
-    }
-  },
-
-  deleteAccount() {
-    if (confirm('⚠️ ADVERTENCIA: Esta acción es PERMANENTE y eliminará todos tus datos.\n\n¿Estás absolutamente seguro?')) {
-      if (confirm('Escribe DELETE para confirmar')) {
-        if (typeof App !== 'undefined') {
-          App.showNotification('Procesando', 'Tu solicitud de eliminación ha sido recibida', 'info');
-          // En producción, esto iniciaría el proceso de eliminación
+          <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+            <button class="btn btn-primary" style="flex:1;" onclick="Settings.saveIntegration('whatsapp')">
+              💾 Guardar
+            </button>
+            <button class="btn btn-secondary" onclick="App.closeModal()">Cancelar</button>
+          </div>`;
         }
-      }
+
+        if (id === 'email') {
+            title = '📧 SendGrid Email';
+            content = `
+          <p class="text-muted" style="font-size:0.875rem;margin-bottom:1.5rem;">
+            Necesitas una API Key de SendGrid con permisos de envío.
+          </p>
+          <div class="form-group">
+            <label class="form-label">API Key</label>
+            <input type="password" class="form-input" id="int_sg_key"
+              value="${org.sendgrid_key ? '••••••••••••••••' : ''}" placeholder="SG.xxxxxxx...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Remitente</label>
+            <input type="email" class="form-input" id="int_sg_email"
+              value="${org.sender_email || ''}" placeholder="noreply@tuclínica.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nombre Remitente</label>
+            <input type="text" class="form-input" id="int_sg_name"
+              value="${org.sender_name || org.name || ''}" placeholder="Mi Clínica Veterinaria">
+          </div>
+          <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+            <button class="btn btn-primary" style="flex:1;" onclick="Settings.saveIntegration('email')">
+              💾 Guardar
+            </button>
+            <button class="btn btn-secondary" onclick="App.closeModal()">Cancelar</button>
+          </div>`;
+        }
+
+        App.showModal(title, content);
+    },
+
+    async saveIntegration(id) {
+        let updates = {};
+
+        if (id === 'whatsapp') {
+            const sid   = document.getElementById('int_twilio_sid').value.trim();
+            const token = document.getElementById('int_twilio_token').value.trim();
+            const phone = document.getElementById('int_twilio_phone').value.trim();
+            if (!sid || !phone) { App.showNotification('Error', 'SID y teléfono son obligatorios', 'error'); return; }
+            updates = { twilio_sid: sid, twilio_phone: phone };
+            // Only update token if it was changed (not placeholder)
+            if (token && !token.startsWith('•')) updates.twilio_auth_token = token;
+        }
+
+        if (id === 'email') {
+            const key   = document.getElementById('int_sg_key').value.trim();
+            const email = document.getElementById('int_sg_email').value.trim();
+            const name  = document.getElementById('int_sg_name').value.trim();
+            if (!email) { App.showNotification('Error', 'El email remitente es obligatorio', 'error'); return; }
+            updates = { sender_email: email, sender_name: name || null };
+            if (key && !key.startsWith('•')) updates.sendgrid_key = key;
+        }
+
+        try {
+            const saved = await DB.updateOrganization(updates);
+            if (window.AuthState) window.AuthState.organization = { ...window.AuthState.organization, ...saved };
+            App.closeModal();
+            App.showNotification('Integración guardada', 'La configuración ha sido actualizada', 'success');
+            this._renderIntegrations();
+        } catch (err) {
+            App.showNotification('Error', 'No se pudo guardar la integración', 'error');
+            console.error('saveIntegration:', err);
+        }
+    },
+
+    exportData() {
+        if (!confirm('¿Exportar todos los datos de tu organización?')) return;
+
+        const data = {
+            exported_at: new Date().toISOString(),
+            organization: window.AuthState?.organization?.name,
+            clients: App.data?.clients?.length || 0,
+            appointments: App.data?.appointments?.length || 0,
+            clinical_records: App.data?.clinicalRecords?.length || 0
+        };
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `VetConnect_export_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        App.showNotification('Datos exportados', 'El archivo ha sido descargado', 'success');
     }
-  }
 };
 
-// Auto-register module
 if (typeof window !== 'undefined') {
-  window.Settings = Settings;
+    window.Settings = Settings;
 }
