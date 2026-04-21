@@ -378,15 +378,63 @@ const Education = {
       {
         id: 5, icon: '🪱', category: 'Vacunación & Prevención',
         title: 'Prevención de Parásitos',
-        summary: 'Cómo proteger a tu mascota de parásitos internos y externos.',
-        content: `<h3>Prevención de Parásitos</h3>
-          <p>La prevención es más fácil y económica que el tratamiento.</p>
-          <h4>Parásitos Externos:</h4>
-          <ul><li><strong>Pulgas:</strong> Pipetas mensuales, collares antiparasitarios</li>
-          <li><strong>Garrapatas:</strong> Revisión post-paseo</li></ul>
-          <h4>Cronograma de Desparasitación:</h4>
-          <ul><li>Cachorros: Cada 2-4 semanas hasta 6 meses</li>
-          <li>Adultos: Cada 3-6 meses</li><li>Preventivo de filaria: Mensual</li></ul>`
+        summary: 'Guía completa para proteger a tu mascota de parásitos internos y externos durante todo el año.',
+        content: `
+          <h3>Prevención de Parásitos</h3>
+          <p>La prevención es más segura, más efectiva y más económica que el tratamiento. Un programa antiparasitario constante protege a tu mascota — y a toda tu familia.</p>
+
+          <h4>🦟 Parásitos Externos</h4>
+          <ul>
+            <li><strong>Pulgas:</strong> Se reproducen cada 21 días. Una sola pulga puede poner hasta 50 huevos diarios. Usa pipetas spot-on mensuales, collares de larga duración (hasta 8 meses) o tabletas masticables según indicación veterinaria. Trata también el ambiente (hogar, tapetes, cama de la mascota).</li>
+            <li><strong>Garrapatas:</strong> Transmiten enfermedades graves como ehrlichiosis, babesiosis y enfermedad de Lyme. Revisa a tu mascota después de cada paseo por zonas verdes, especialmente orejas, axilas, entre los dedos y alrededor del collar. Extrae con pinzas especiales sin torcer. Usa antiparasitarios con acción garrapaticida.</li>
+            <li><strong>Ácaros (sarna y otodectos):</strong> La sarna sarcóptica causa picazón intensa y puede contagiarse al humano. Los ácaros del oído (otodectos) producen secreción oscura y rascado de orejas. Requieren tratamiento veterinario específico.</li>
+            <li><strong>Piojos:</strong> Poco frecuentes pero posibles en animales debilitados. Se transmiten por contacto directo. Tratamiento con baños antiparasitarios.</li>
+          </ul>
+
+          <h4>🪱 Parásitos Internos</h4>
+          <ul>
+            <li><strong>Lombriz redonda (Toxocara):</strong> Muy común en cachorros, puede transmitirse al humano (larva migrans). Síntomas: abdomen hinchado, diarrea, vómito con lombrices visibles. Desparasitación obligatoria desde las 2 semanas de edad.</li>
+            <li><strong>Tenias (Dipylidium):</strong> Se transmiten por ingesta de pulgas infectadas. Se observan segmentos blancos tipo arroz en las heces o alrededor del ano. Tratar simultáneamente con antipulgas.</li>
+            <li><strong>Giardia:</strong> Protozoo que causa diarrea crónica maloliente. Se contagia por agua o suelo contaminado. Frecuente en cachorros y animales con acceso a zonas húmedas.</li>
+            <li><strong>Gusano del corazón (Dirofilaria):</strong> Transmitido por mosquitos. Afecta corazón, pulmones y arterias pulmonares. Puede ser fatal. La prevención mensual (tableta o pipeta) es obligatoria en zonas de riesgo. El tratamiento de la enfermedad activa es largo, costoso y riesgoso.</li>
+            <li><strong>Anquilostomas y trichuros:</strong> Parásitos intestinales que causan anemia, diarrea con sangre y pérdida de peso. Se detectan en análisis de heces.</li>
+          </ul>
+
+          <h4>📅 Cronograma de Desparasitación</h4>
+          <ul>
+            <li><strong>Cachorros/gatitos:</strong> Inicio a las 2 semanas de edad, repetir cada 2 semanas hasta los 3 meses, luego mensual hasta los 6 meses</li>
+            <li><strong>Adultos (6 meses – 7 años):</strong> Desparasitación interna cada 3 meses; externa mensual o según producto</li>
+            <li><strong>Seniors (7+ años):</strong> Control cada 2-3 meses con examen de heces anual</li>
+            <li><strong>Hembras gestantes:</strong> Desparasitar antes del parto bajo supervisión veterinaria</li>
+            <li><strong>Preventivo de filaria:</strong> Mensual durante todo el año en zonas endémicas</li>
+          </ul>
+
+          <h4>🔬 Señales de Alerta</h4>
+          <ul>
+            <li>Rascado o mordisqueo excesivo de la piel</li>
+            <li>Pelaje opaco, caída de pelo o zonas sin pelo</li>
+            <li>Diarrea crónica o heces con sangre o moco</li>
+            <li>Vómitos frecuentes o con presencia de parásitos</li>
+            <li>Pérdida de peso a pesar de comer bien</li>
+            <li>Abdomen distendido (especialmente en cachorros)</li>
+            <li>Tos seca persistente (posible filaria)</li>
+            <li>Arrastre del trasero en el suelo (tenias)</li>
+            <li>Palidez en encías (anemia por parásitos)</li>
+          </ul>
+
+          <h4>🏠 Prevención en el Hogar</h4>
+          <ul>
+            <li>Lavar regularmente la cama, mantas y juguetes de tu mascota</li>
+            <li>Aspirar frecuentemente alfombras y tapetes</li>
+            <li>Recoger las heces del jardín diariamente</li>
+            <li>Evitar que tu mascota beba agua de charcos o ríos</li>
+            <li>No permitir que cace o consuma presas silvestres</li>
+            <li>Controlar pulgas en todos los animales del hogar simultáneamente</li>
+          </ul>
+
+          <p style="margin-top:1rem;padding:0.75rem;background:rgba(64,224,208,0.1);border-left:3px solid var(--accent-teal);border-radius:4px;">
+            <strong>Recuerda:</strong> Consulta a tu veterinario para definir el programa antiparasitario más adecuado según la especie, edad, peso, estilo de vida y zona geográfica de tu mascota. Algunos productos no son seguros para todas las especies.
+          </p>`
       },
       {
         id: 6, icon: '🦷', category: 'Cuidados',
