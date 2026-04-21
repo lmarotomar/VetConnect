@@ -145,6 +145,10 @@ async function initSupabase() {
             AuthState.user = session.user;
             AuthState.isAuthenticated = true;
             await loadUserProfile();
+            // If the display was already rendered with a fallback name, update it
+            if (typeof updateUserDisplay === 'function' && AuthState.profile) {
+                updateUserDisplay(AuthState.profile, AuthState.organization);
+            }
         } else if (event === 'SIGNED_OUT') {
             AuthState.session = null;
             AuthState.user = null;

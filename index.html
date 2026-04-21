@@ -359,26 +359,48 @@
 
             sessionStorage.removeItem('vc_auth_redirect');
 
-            // Initialize global supabase variable needed by db.js
+            // Initialize Supabase (awaits loadUserProfile internally)
             if (typeof initSupabase !== 'undefined') {
                 await initSupabase();
             }
 
-            // Authenticated — use AuthState profile loaded from user_profiles table
+            // If profile still not loaded (race: getSession resolved before onAuthStateChange),
+            // wait up to 2s for onAuthStateChange to fire and loadUserProfile to complete
+            if (!window.AuthState?.profile && window.supabase) {
+                await new Promise(resolve => {
+                    const timer = setTimeout(resolve, 2000);
+                    const { data: { subscription } } = window.supabase.auth.onAuthStateChange(async (event) => {
+                        if (event === 'SIGNED_IN') {
+                            clearTimeout(timer);
+                            subscription.unsubscribe();
+                            // Give loadUserProfile time to finish
+                            await new Promise(r => setTimeout(r, 300));
+                            resolve();
+                        }
+                    });
+                });
+            }
+
+            // Build display profile — prefer AuthState (from user_profiles DB row),
+            // fall back to user_metadata fields passed at registration
             try {
+                const meta = storedSession.user?.user_metadata || {};
+                const fallbackName = [meta.first_name, meta.last_name].filter(Boolean).join(' ')
+                    || meta.full_name
+                    || storedSession.user?.email?.split('@')[0]
+                    || 'Usuario';
+
                 const profile = window.AuthState?.profile || {
-                    name: storedSession.user?.user_metadata?.full_name
-                        || storedSession.user?.email?.split('@')[0]
-                        || 'Usuario',
+                    name: fallbackName,
                     email: storedSession.user?.email,
-                    role: storedSession.user?.user_metadata?.role || 'clinic_admin'
+                    role: meta.role || 'clinic_admin'
                 };
                 updateUserDisplay(profile, window.AuthState?.organization);
             } catch (e) {
                 console.error('Profile load error:', e);
             }
 
-            // Initialize the app
+            // Initialize the app — at this point AuthState.organization is guaranteed to be set
             if (typeof App !== 'undefined') {
                 await App.init();
             }

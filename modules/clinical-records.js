@@ -248,104 +248,225 @@ const ClinicalRecords = {
 
     // ─── NUEVA NOTA CLÍNICA ───────────────────────────────────────
 
+    // ─── LAB REFERENCE RANGES PER SPECIES ────────────────────────
+    // Fuente: valores de referencia estándar veterinaria (Idexx/Antech/Merck Vet Manual)
+
+    labRefs: {
+        canino: {
+            'Hemograma completo': {
+                eritrocitos: '5.5–8.5 ×10⁶/µL', leucocitos: '6–17 ×10³/µL',
+                hematocrito: '37–55%', hemoglobina: '12–18 g/dL', plaquetas: '200–500 ×10³/µL'
+            },
+            'Bioquímica sérica': {
+                alt: '10–100 U/L', ast: '10–50 U/L', creatinina: '0.5–1.5 mg/dL',
+                bun: '7–27 mg/dL', glucosa: '70–120 mg/dL', proteinas: '5.4–7.1 g/dL', albumina: '2.3–3.9 g/dL'
+            },
+            'Urianálisis': {
+                uri_ph: '5.5–7.5', uri_densidad: '1.015–1.045', uri_celulas: '<5/campo'
+            }
+        },
+        felino: {
+            'Hemograma completo': {
+                eritrocitos: '5–10 ×10⁶/µL', leucocitos: '5.5–19.5 ×10³/µL',
+                hematocrito: '30–45%', hemoglobina: '8–15 g/dL', plaquetas: '300–700 ×10³/µL'
+            },
+            'Bioquímica sérica': {
+                alt: '10–75 U/L', ast: '10–60 U/L', creatinina: '0.8–2.4 mg/dL',
+                bun: '14–36 mg/dL', glucosa: '65–130 mg/dL', proteinas: '5.7–7.8 g/dL', albumina: '2.3–3.5 g/dL'
+            },
+            'Urianálisis': {
+                uri_ph: '5.5–7.0', uri_densidad: '1.020–1.060', uri_celulas: '<5/campo'
+            }
+        },
+        conejo: {
+            'Hemograma completo': {
+                eritrocitos: '4–7 ×10⁶/µL', leucocitos: '5–12 ×10³/µL',
+                hematocrito: '33–50%', hemoglobina: '10–17.4 g/dL', plaquetas: '250–650 ×10³/µL'
+            },
+            'Bioquímica sérica': {
+                alt: '14–80 U/L', ast: '10–98 U/L', creatinina: '0.5–2.5 mg/dL',
+                bun: '10–29 mg/dL', glucosa: '75–155 mg/dL', proteinas: '5.4–7.4 g/dL', albumina: '2.4–4.6 g/dL'
+            }
+        },
+        ave: {
+            'Hemograma completo': {
+                eritrocitos: '2.5–4.5 ×10⁶/µL', leucocitos: '4–12 ×10³/µL',
+                hematocrito: '35–55%', hemoglobina: '11–19 g/dL', plaquetas: 'Variable'
+            },
+            'Bioquímica sérica': {
+                alt: '19–48 U/L', ast: '45–230 U/L', creatinina: 'N/A (aves: ácido úrico)',
+                bun: 'N/A', glucosa: '200–400 mg/dL', proteinas: '3–5 g/dL', albumina: '1.3–2.8 g/dL'
+            }
+        },
+        reptil: {
+            'Hemograma completo': {
+                eritrocitos: '0.4–2.4 ×10⁶/µL', leucocitos: '3–15 ×10³/µL',
+                hematocrito: '20–40%', hemoglobina: 'Variable', plaquetas: 'Variable'
+            },
+            'Bioquímica sérica': {
+                alt: 'Variable', ast: 'Variable', creatinina: 'N/A',
+                bun: 'N/A', glucosa: '60–160 mg/dL', proteinas: '3–8 g/dL', albumina: 'Variable'
+            }
+        },
+        equino: {
+            'Hemograma completo': {
+                eritrocitos: '6.5–12.5 ×10⁶/µL', leucocitos: '5.5–12.5 ×10³/µL',
+                hematocrito: '30–52%', hemoglobina: '11–19 g/dL', plaquetas: '100–350 ×10³/µL'
+            },
+            'Bioquímica sérica': {
+                alt: 'N/A (usar GGT/AST)', ast: '226–366 U/L', creatinina: '1.2–1.9 mg/dL',
+                bun: '10–24 mg/dL', glucosa: '60–100 mg/dL', proteinas: '5.8–8.0 g/dL', albumina: '2.6–4.0 g/dL'
+            },
+            'Urianálisis': {
+                uri_ph: '7.0–9.0', uri_densidad: '1.020–1.050', uri_celulas: '<5/campo'
+            }
+        },
+        bovino: {
+            'Hemograma completo': {
+                eritrocitos: '5–10 ×10⁶/µL', leucocitos: '4–12 ×10³/µL',
+                hematocrito: '24–46%', hemoglobina: '8–15 g/dL', plaquetas: '100–800 ×10³/µL'
+            },
+            'Bioquímica sérica': {
+                alt: 'N/A (usar GGT/AST)', ast: '78–132 U/L', creatinina: '1.0–2.0 mg/dL',
+                bun: '6–27 mg/dL', glucosa: '45–75 mg/dL', proteinas: '6.7–7.5 g/dL', albumina: '3.0–3.5 g/dL'
+            },
+            'Urianálisis': {
+                uri_ph: '7.0–8.5', uri_densidad: '1.020–1.040', uri_celulas: '<5/campo'
+            }
+        },
+        cerdo: {
+            'Hemograma completo': {
+                eritrocitos: '5–8 ×10⁶/µL', leucocitos: '11–22 ×10³/µL',
+                hematocrito: '32–50%', hemoglobina: '10–16 g/dL', plaquetas: '325–715 ×10³/µL'
+            },
+            'Bioquímica sérica': {
+                alt: '22–46 U/L', ast: '15–55 U/L', creatinina: '1.0–2.7 mg/dL',
+                bun: '8–24 mg/dL', glucosa: '65–150 mg/dL', proteinas: '6.0–8.0 g/dL', albumina: '1.9–3.9 g/dL'
+            },
+            'Urianálisis': {
+                uri_ph: '5.0–8.0', uri_densidad: '1.010–1.050', uri_celulas: '<5/campo'
+            }
+        }
+    },
+
+    getSpeciesKey() {
+        const s = (this.selectedPet?.species || '').toLowerCase();
+        if (s.includes('perro') || s.includes('dog') || s.includes('cani')) return 'canino';
+        if (s.includes('gato') || s.includes('cat') || s.includes('feli')) return 'felino';
+        if (s.includes('conejo') || s.includes('rabbit')) return 'conejo';
+        if (s.includes('ave') || s.includes('bird') || s.includes('loro') || s.includes('cotorra')) return 'ave';
+        if (s.includes('reptil') || s.includes('iguana') || s.includes('tortuga') || s.includes('serpiente')) return 'reptil';
+        if (s.includes('caballo') || s.includes('horse') || s.includes('equi') || s.includes('yegua') || s.includes('potro')) return 'equino';
+        if (s.includes('bovino') || s.includes('vaca') || s.includes('toro') || s.includes('cattle') || s.includes('ternero')) return 'bovino';
+        if (s.includes('cerdo') || s.includes('pig') || s.includes('porcino') || s.includes('chancho')) return 'cerdo';
+        return null;
+    },
+
+    getRef(testName, fieldId) {
+        const key = this.getSpeciesKey();
+        if (!key) return '';
+        return this.labRefs[key]?.[testName]?.[fieldId] || '';
+    },
+
     // ─── LAB CONFIGURATION ───────────────────────────────────────
 
     labConfig: {
         'Hemograma completo': {
             icon: '🩸',
             fields: [
-                { id: 'eritrocitos',  label: 'Eritrocitos',  unit: '×10⁶/µL', ref: '5.5–8.5' },
-                { id: 'leucocitos',   label: 'Leucocitos',   unit: '×10³/µL', ref: '6–17' },
-                { id: 'hematocrito',  label: 'Hematocrito',  unit: '%',        ref: '37–55' },
-                { id: 'hemoglobina',  label: 'Hemoglobina',  unit: 'g/dL',     ref: '12–18' },
-                { id: 'plaquetas',    label: 'Plaquetas',    unit: '×10³/µL',  ref: '200–500' },
-                { id: 'hem_interp',   label: 'Interpretación', unit: '', ref: '', wide: true }
+                { id: 'eritrocitos',  label: 'Eritrocitos',    unit: '×10⁶/µL' },
+                { id: 'leucocitos',   label: 'Leucocitos',     unit: '×10³/µL' },
+                { id: 'hematocrito',  label: 'Hematocrito',    unit: '%'        },
+                { id: 'hemoglobina',  label: 'Hemoglobina',    unit: 'g/dL'     },
+                { id: 'plaquetas',    label: 'Plaquetas',      unit: '×10³/µL'  },
+                { id: 'hem_interp',   label: 'Interpretación', unit: '', wide: true }
             ]
         },
         'Bioquímica sérica': {
             icon: '🧪',
             fields: [
-                { id: 'alt',          label: 'ALT/GPT',      unit: 'U/L',    ref: '10–100' },
-                { id: 'ast',          label: 'AST/GOT',      unit: 'U/L',    ref: '10–50' },
-                { id: 'creatinina',   label: 'Creatinina',   unit: 'mg/dL',  ref: '0.5–1.5' },
-                { id: 'bun',          label: 'BUN',          unit: 'mg/dL',  ref: '7–27' },
-                { id: 'glucosa',      label: 'Glucosa',      unit: 'mg/dL',  ref: '70–120' },
-                { id: 'proteinas',    label: 'Proteínas tot.', unit: 'g/dL', ref: '5.4–7.1' },
-                { id: 'albumina',     label: 'Albúmina',     unit: 'g/dL',   ref: '2.3–3.9' },
-                { id: 'bio_interp',   label: 'Interpretación', unit: '', ref: '', wide: true }
+                { id: 'alt',          label: 'ALT/GPT',        unit: 'U/L'   },
+                { id: 'ast',          label: 'AST/GOT',        unit: 'U/L'   },
+                { id: 'creatinina',   label: 'Creatinina',     unit: 'mg/dL' },
+                { id: 'bun',          label: 'BUN',            unit: 'mg/dL' },
+                { id: 'glucosa',      label: 'Glucosa',        unit: 'mg/dL' },
+                { id: 'proteinas',    label: 'Proteínas tot.', unit: 'g/dL'  },
+                { id: 'albumina',     label: 'Albúmina',       unit: 'g/dL'  },
+                { id: 'bio_interp',   label: 'Interpretación', unit: '', wide: true }
             ]
         },
         'Urianálisis': {
             icon: '🫧',
             fields: [
-                { id: 'uri_aspecto',  label: 'Aspecto',      unit: '',       ref: 'Claro' },
-                { id: 'uri_ph',       label: 'pH',           unit: '',       ref: '5.5–7.5' },
-                { id: 'uri_densidad', label: 'Densidad',     unit: '',       ref: '1.015–1.045' },
-                { id: 'uri_proteinas',label: 'Proteínas',    unit: '',       ref: 'Negativo' },
-                { id: 'uri_glucosa',  label: 'Glucosa',      unit: '',       ref: 'Negativo' },
-                { id: 'uri_celulas',  label: 'Células',      unit: '/campo', ref: '<5' },
-                { id: 'uri_bacterias',label: 'Bacterias',    unit: '',       ref: 'Negativo' },
-                { id: 'uri_interp',   label: 'Interpretación', unit: '', ref: '', wide: true }
+                { id: 'uri_aspecto',   label: 'Aspecto',    unit: ''        },
+                { id: 'uri_ph',        label: 'pH',         unit: ''        },
+                { id: 'uri_densidad',  label: 'Densidad',   unit: ''        },
+                { id: 'uri_proteinas', label: 'Proteínas',  unit: ''        },
+                { id: 'uri_glucosa',   label: 'Glucosa',    unit: ''        },
+                { id: 'uri_celulas',   label: 'Células',    unit: '/campo'  },
+                { id: 'uri_bacterias', label: 'Bacterias',  unit: ''        },
+                { id: 'uri_interp',    label: 'Interpretación', unit: '', wide: true }
             ]
         },
         'Coproparasitológico': {
             icon: '🔬',
             fields: [
-                { id: 'copro_res',    label: 'Resultado',    unit: '',  ref: 'Neg/Pos', select: ['Negativo','Positivo'] },
-                { id: 'copro_para',   label: 'Parásitos encontrados', unit: '', ref: '', wide: true }
+                { id: 'copro_res',  label: 'Resultado', unit: '', select: ['Negativo','Positivo'] },
+                { id: 'copro_para', label: 'Parásitos encontrados', unit: '', wide: true }
             ]
         },
         'Cultivo y antibiograma': {
             icon: '🧫',
             fields: [
-                { id: 'cult_muestra', label: 'Tipo de muestra', unit: '', ref: '' },
-                { id: 'cult_org',     label: 'Microorganismo',  unit: '', ref: '' },
-                { id: 'cult_sensi',   label: 'Sensibilidad antibiótica', unit: '', ref: '', wide: true }
+                { id: 'cult_muestra', label: 'Tipo de muestra',          unit: '' },
+                { id: 'cult_org',     label: 'Microorganismo',            unit: '' },
+                { id: 'cult_sensi',   label: 'Sensibilidad antibiótica',  unit: '', wide: true }
             ]
         },
         'Citología': {
             icon: '🔬',
             fields: [
-                { id: 'cito_muestra', label: 'Tipo de muestra', unit: '', ref: '' },
-                { id: 'cito_hall',    label: 'Hallazgos',        unit: '', ref: '', wide: true },
-                { id: 'cito_interp',  label: 'Interpretación',   unit: '', ref: '', wide: true }
+                { id: 'cito_muestra', label: 'Tipo de muestra', unit: '' },
+                { id: 'cito_hall',    label: 'Hallazgos',        unit: '', wide: true },
+                { id: 'cito_interp',  label: 'Interpretación',   unit: '', wide: true }
             ]
         },
         'Radiografía': {
             icon: '🩻',
             fields: [
-                { id: 'rx_region',    label: 'Región',      unit: '', ref: '' },
-                { id: 'rx_proy',      label: 'Proyección',  unit: '', ref: '' },
-                { id: 'rx_hall',      label: 'Hallazgos',   unit: '', ref: '', wide: true }
+                { id: 'rx_region', label: 'Región',     unit: '' },
+                { id: 'rx_proy',   label: 'Proyección', unit: '' },
+                { id: 'rx_hall',   label: 'Hallazgos',  unit: '', wide: true }
             ]
         },
         'Ecografía': {
             icon: '📡',
             fields: [
-                { id: 'eco_region',   label: 'Órganos/Región evaluados', unit: '', ref: '' },
-                { id: 'eco_hall',     label: 'Hallazgos',  unit: '', ref: '', wide: true }
+                { id: 'eco_region', label: 'Órganos/Región evaluados', unit: '' },
+                { id: 'eco_hall',   label: 'Hallazgos', unit: '', wide: true }
             ]
         },
         'PCR / Serología': {
             icon: '🧬',
             fields: [
-                { id: 'pcr_test',     label: 'Test específico', unit: '', ref: '' },
-                { id: 'pcr_res',      label: 'Resultado',       unit: '', ref: '', select: ['Negativo','Positivo','Dudoso'] },
-                { id: 'pcr_titulo',   label: 'Título/Índice',   unit: '', ref: '' }
+                { id: 'pcr_test',   label: 'Test específico', unit: '' },
+                { id: 'pcr_res',    label: 'Resultado',        unit: '', select: ['Negativo','Positivo','Dudoso'] },
+                { id: 'pcr_titulo', label: 'Título/Índice',    unit: '' }
             ]
         },
         'Otro': {
             icon: '📄',
             fields: [
-                { id: 'otro_nombre',  label: 'Nombre del análisis', unit: '', ref: '' },
-                { id: 'otro_res',     label: 'Resultado',            unit: '', ref: '', wide: true }
+                { id: 'otro_nombre', label: 'Nombre del análisis', unit: '' },
+                { id: 'otro_res',    label: 'Resultado',             unit: '', wide: true }
             ]
         }
     },
 
-    renderLabField(f, testKey) {
+    renderLabField(f, testKey, testName) {
         const inputId = `${testKey}_${f.id}`;
-        const refText = f.ref ? `<span style="font-size:0.7rem;color:var(--text-muted);margin-left:0.25rem;">(ref: ${f.ref})</span>` : '';
+        const ref = testName ? this.getRef(testName, f.id) : '';
+        const refText = ref ? `<span style="font-size:0.7rem;color:var(--brand-green);margin-left:0.25rem;">(ref: ${ref})</span>` : '';
 
         if (f.select) {
             return `
@@ -367,7 +488,7 @@ const ClinicalRecords = {
             </label>
             <input type="text" class="form-input" id="${inputId}"
               style="padding:0.3rem 0.5rem;font-size:0.82rem;"
-              placeholder="${f.ref || ''}">
+              placeholder="${ref || ''}">
           </div>`;
     },
 
@@ -379,7 +500,7 @@ const ClinicalRecords = {
             if (document.getElementById(panelId)) return;
             const config = this.labConfig[testName];
             const testKey = testName.replace(/[^a-z0-9]/gi, '_');
-            const fieldsHtml = config.fields.map(f => this.renderLabField(f, testKey)).join('');
+            const fieldsHtml = config.fields.map(f => this.renderLabField(f, testKey, testName)).join('');
 
             const panel = document.createElement('div');
             panel.id = panelId;
@@ -619,7 +740,7 @@ const ClinicalRecords = {
           <div class="form-group">
             <label class="form-label">Especie</label>
             <select class="form-select" id="editPetSpecies">
-              ${['Perro','Gato','Ave','Conejo','Reptil','Otro'].map(s =>
+              ${['Perro','Gato','Ave','Conejo','Reptil','Caballo','Bovino','Cerdo','Otro'].map(s =>
                 `<option value="${s}" ${pet.species === s ? 'selected' : ''}>${s}</option>`
               ).join('')}
             </select>

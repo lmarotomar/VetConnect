@@ -221,11 +221,10 @@ const Reports = {
   loadRealMetrics() {
     if (typeof App === 'undefined' || !App.data) return;
 
-    const appointments = App.data.appointments || [];
-    const clients = App.data.clients || [];
-
-    const completed = appointments.filter(a => a.status === 'completed').length;
-    const pending   = appointments.filter(a => a.status === 'pending' || a.status === 'confirmed').length;
+    const appointments = this._filterByPeriod(App.data.appointments || []);
+    const clients      = App.data.clients || [];
+    const completed    = appointments.filter(a => a.status === 'completed').length;
+    const pending      = appointments.filter(a => a.status === 'pending' || a.status === 'confirmed').length;
 
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
     set('rpt-appointments', appointments.length);
@@ -236,115 +235,163 @@ const Reports = {
 
   setPeriod(period) {
     this.selectedPeriod = period;
+    this.loadRealMetrics();
     this.loadCharts();
-    App.showNotification('Período actualizado', `Mostrando datos de: ${period}`, 'info');
+  },
+
+  // Returns appointments filtered to the selected period
+  _filterByPeriod(appointments) {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+
+    return appointments.filter(a => {
+      const d = a.appointment_date || a.date;
+      if (!d) return false;
+      if (this.selectedPeriod === 'today') return d === today;
+      if (this.selectedPeriod === 'week') {
+        const start = new Date(now); start.setDate(now.getDate() - 6); start.setHours(0,0,0,0);
+        return new Date(d) >= start;
+      }
+      if (this.selectedPeriod === 'month') {
+        return d.startsWith(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`);
+      }
+      if (this.selectedPeriod === 'year') {
+        return d.startsWith(`${now.getFullYear()}`);
+      }
+      return true;
+    });
   },
 
   loadCharts() {
-    // Appointments by Type
+    const allAppointments = App.data?.appointments || [];
+    const appointments    = this._filterByPeriod(allAppointments);
+    const communications  = App.data?.communications || [];
+    const total           = appointments.length;
+
+    const periodLabel = { today: 'hoy', week: 'esta semana', month: 'este mes', year: 'este año' }[this.selectedPeriod] || '';
+
+    // ── Citas por Tipo ────────────────────────────────────────────
+    const typeCounts = {};
+    appointments.forEach(a => {
+      const t = a.type || a.appointment_type || 'Sin tipo';
+      typeCounts[t] = (typeCounts[t] || 0) + 1;
+    });
+    const typeColors = ['#667eea','#4facfe','#00d4aa','#f5576c','#ff6b6b','#f6d365','#a18cd1'];
+    const sortedTypes = Object.entries(typeCounts).sort((a,b) => b[1]-a[1]);
+    const maxCount = sortedTypes[0]?.[1] || 1;
+
     const appointmentsByType = document.getElementById('appointmentsByType');
-    appointmentsByType.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 1rem;">
-        ${this.renderBarChart('Consulta General', 42, '#667eea')}
-        ${this.renderBarChart('Control', 28, '#4facfe')}
-        ${this.renderBarChart('Vacunación', 23, '#00d4aa')}
-        ${this.renderBarChart('Cirugía', 15, '#f5576c')}
-        ${this.renderBarChart('Emergencia', 8, '#ff6b6b')}
-      </div>
-    `;
+    appointmentsByType.innerHTML = sortedTypes.length
+      ? `<div style="display:flex;flex-direction:column;gap:1rem;">
+          ${sortedTypes.map(([t, n], i) => this.renderBarChart(t, n, maxCount, typeColors[i % typeColors.length])).join('')}
+         </div>`
+      : `<p class="text-muted text-center" style="padding:2rem;">Sin citas ${periodLabel}</p>`;
 
-    // Communication Metrics
+    // ── Métricas de Comunicación ──────────────────────────────────
+    const channelCounts = {};
+    communications.forEach(c => {
+      const ch = c.channel || 'otro';
+      channelCounts[ch] = (channelCounts[ch] || 0) + 1;
+    });
+    const channelIcons = { whatsapp: '📱', email: '📧', sms: '💬' };
+    const commRows = Object.entries(channelCounts).sort((a,b) => b[1]-a[1]);
+
     const communicationMetrics = document.getElementById('communicationMetrics');
-    communicationMetrics.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 1rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <div class="text-muted" style="font-size: 0.875rem;">WhatsApp</div>
-            <div style="font-size: 1.5rem; font-weight: 700;">156</div>
-          </div>
-          <span class="badge badge-success">94% abiertos</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <div class="text-muted" style="font-size: 0.875rem;">Email</div>
-            <div style="font-size: 1.5rem; font-weight: 700;">89</div>
-          </div>
-          <span class="badge badge-success">76% abiertos</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <div class="text-muted" style="font-size: 0.875rem;">SMS</div>
-            <div style="font-size: 1.5rem; font-weight: 700;">34</div>
-          </div>
-          <span class="badge badge-success">98% entregados</span>
-        </div>
-      </div>
-    `;
+    communicationMetrics.innerHTML = commRows.length
+      ? `<div style="display:flex;flex-direction:column;gap:1rem;">
+          ${commRows.map(([ch, n]) => `
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div class="text-muted" style="font-size:0.875rem;">${channelIcons[ch] || '💬'} ${ch}</div>
+                <div style="font-size:1.5rem;font-weight:700;">${n}</div>
+              </div>
+              <span class="badge" style="background:var(--bg-glass);color:var(--text-muted);">registros</span>
+            </div>`).join('')}
+          <p class="text-muted" style="font-size:0.75rem;margin-top:0.5rem;">
+            Tasas de apertura/entrega disponibles cuando las integraciones estén activas.
+          </p>
+         </div>`
+      : `<p class="text-muted text-center" style="padding:2rem;">Sin comunicaciones registradas</p>`;
 
-    // Top Services
+    // ── Servicios Más Solicitados (misma base que tipos de cita) ──
     const topServices = document.getElementById('topServices');
-    topServices.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-        ${this.renderServiceItem('🏥 Consulta General', '33%')}
-        ${this.renderServiceItem('💉 Vacunación', '22%')}
-        ${this.renderServiceItem('🔬 Análisis de Laboratorio', '18%')}
-        ${this.renderServiceItem('✂️ Cirugías', '15%')}
-        ${this.renderServiceItem('🦷 Limpieza Dental', '12%')}
-      </div>
-    `;
+    topServices.innerHTML = sortedTypes.length
+      ? `<div style="display:flex;flex-direction:column;gap:0.75rem;">
+          ${sortedTypes.map(([t, n]) => {
+            const pct = total > 0 ? Math.round((n/total)*100) : 0;
+            return this.renderServiceItem(t, `${n} citas (${pct}%)`);
+          }).join('')}
+         </div>`
+      : `<p class="text-muted text-center" style="padding:2rem;">Sin datos ${periodLabel}</p>`;
 
-    // Performance Trends
+    // ── Tendencias de Rendimiento ─────────────────────────────────
+    const completed  = appointments.filter(a => a.status === 'completed').length;
+    const cancelled  = appointments.filter(a => a.status === 'cancelled').length;
+    const attendance = total > 0 ? Math.round((completed / total) * 100) : null;
+
+    const clients    = App.data?.clients || [];
+    const clientsWithMultiple = clients.filter(c => {
+      const pets = c.pets || c.patients || [];
+      return allAppointments.filter(a => String(a.client_id || a.clientId) === String(c.id)).length > 1;
+    }).length;
+    const retention = clients.length > 0 ? Math.round((clientsWithMultiple / clients.length) * 100) : null;
+
     const performanceTrends = document.getElementById('performanceTrends');
     performanceTrends.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 1rem;">
-        <div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-            <span class="text-muted" style="font-size: 0.875rem;">Tasa de Asistencia</span>
-            <strong>96%</strong>
-          </div>
-          <div style="height: 8px; background: var(--bg-glass); border-radius: 4px; overflow: hidden;">
-            <div style="width: 96%; height: 100%; background: var(--success-gradient);"></div>
-          </div>
-        </div>
-        
-        <div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-            <span class="text-muted" style="font-size: 0.875rem;">Satisfacción del Cliente</span>
-            <strong>4.8/5.0</strong>
-          </div>
-          <div style="height: 8px; background: var(--bg-glass); border-radius: 4px; overflow: hidden;">
-            <div style="width: 96%; height: 100%; background: var(--primary-gradient);"></div>
-          </div>
-        </div>
-        
-        <div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-            <span class="text-muted" style="font-size: 0.875rem;">Tasa de Retención</span>
-            <strong>87%</strong>
-          </div>
-          <div style="height: 8px; background: var(--bg-glass); border-radius: 4px; overflow: hidden;">
-            <div style="width: 87%; height: 100%; background: var(--secondary-gradient);"></div>
-          </div>
-        </div>
-      </div>
-    `;
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        ${this.renderProgressBar(
+          'Tasa de Asistencia',
+          attendance !== null ? `${attendance}%` : '—',
+          attendance,
+          'var(--success-gradient)'
+        )}
+        ${this.renderProgressBar(
+          'Citas Completadas / Total',
+          total > 0 ? `${completed} / ${total}` : '—',
+          total > 0 ? Math.round((completed/total)*100) : 0,
+          'var(--primary-gradient)'
+        )}
+        ${this.renderProgressBar(
+          'Tasa de Retención (clientes recurrentes)',
+          retention !== null ? `${retention}%` : '—',
+          retention,
+          'var(--secondary-gradient)'
+        )}
+        ${cancelled > 0 ? `<p class="text-muted" style="font-size:0.8rem;">
+          ${cancelled} cita${cancelled !== 1 ? 's' : ''} cancelada${cancelled !== 1 ? 's' : ''} ${periodLabel}.
+        </p>` : ''}
+        <p class="text-muted" style="font-size:0.75rem;margin-top:0.25rem;">
+          Satisfacción del cliente disponible cuando se active el módulo de encuestas.
+        </p>
+      </div>`;
   },
 
-  renderBarChart(label, value, color) {
-    const maxValue = 50;
-    const percentage = (value / maxValue) * 100;
-
+  renderProgressBar(label, displayValue, pct, gradient) {
+    const width = pct !== null ? Math.min(pct, 100) : 0;
     return `
       <div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-          <span style="font-size: 0.875rem;">${label}</span>
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+          <span class="text-muted" style="font-size:0.875rem;">${label}</span>
+          <strong>${displayValue}</strong>
+        </div>
+        <div style="height:8px;background:var(--bg-glass);border-radius:4px;overflow:hidden;">
+          <div style="width:${width}%;height:100%;background:${gradient};transition:width 0.4s ease;"></div>
+        </div>
+      </div>`;
+  },
+
+  renderBarChart(label, value, maxValue, color) {
+    const percentage = maxValue > 0 ? Math.round((value / maxValue) * 100) : 0;
+    return `
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+          <span style="font-size:0.875rem;">${label}</span>
           <strong>${value}</strong>
         </div>
-        <div style="height: 8px; background: var(--bg-glass); border-radius: 4px; overflow: hidden;">
-          <div style="width: ${percentage}%; height: 100%; background: ${color};"></div>
+        <div style="height:8px;background:var(--bg-glass);border-radius:4px;overflow:hidden;">
+          <div style="width:${percentage}%;height:100%;background:${color};transition:width 0.4s ease;"></div>
         </div>
-      </div>
-    `;
+      </div>`;
   },
 
   renderServiceItem(name, percentage) {
@@ -356,35 +403,47 @@ const Reports = {
     `;
   },
 
+  // Shared data snapshot used by both exportToSheets and downloadPDF
+  _reportSnapshot() {
+    const appointments = this._filterByPeriod(App.data?.appointments || []);
+    const clients      = App.data?.clients || [];
+    const comms        = App.data?.communications || [];
+    const completed    = appointments.filter(a => a.status === 'completed').length;
+    const pending      = appointments.filter(a => a.status === 'pending' || a.status === 'confirmed').length;
+    const typeCounts   = {};
+    appointments.forEach(a => {
+      const t = a.type || a.appointment_type || 'Sin tipo';
+      typeCounts[t] = (typeCounts[t] || 0) + 1;
+    });
+    const typeLines = Object.entries(typeCounts)
+      .sort((a,b) => b[1]-a[1])
+      .map(([t,n]) => `${t},${n}`)
+      .join('\n');
+    const periodLabel = { today: 'Hoy', week: 'Esta Semana', month: 'Este Mes', year: 'Este Año' }[this.selectedPeriod] || '';
+    return { appointments, clients, comms, completed, pending, typeLines, periodLabel };
+  },
+
   exportToSheets() {
     App.showNotification('Exportando', 'Generando archivo de reporte...', 'info');
 
-    // Create CSV with report data
-    const csvContent = `Reporte BioVetAI - ${new Date().toLocaleDateString('es-ES')}
+    const { appointments, clients, comms, completed, pending, typeLines, periodLabel } = this._reportSnapshot();
 
-RESUMEN FINANCIERO
-Ingresos del Período,$45280
-Gastos Operativos,$12450
-Ganancia Neta,$32830
-Ticket Promedio,$385
-Total Citas,${this.selectedPeriod === 'week' ? '45' : this.selectedPeriod === 'month' ? '186' : '2245'}
+    const csvContent = `Reporte VetConnect — ${periodLabel} — ${new Date().toLocaleDateString('es-ES')}
 
-SERVICIOS MÁS SOLICITADOS
-Consultas Generales,35%
-Vacunaciones,25%
-Cirugías,15%
-Laboratorio,12%
-Grooming,8%
-Otros,5%
+RESUMEN DE ACTIVIDAD
+Total Citas,${appointments.length}
+Citas Completadas,${completed}
+Citas Pendientes/Confirmadas,${pending}
+Total Clientes,${clients.length}
+Mensajes Enviados,${comms.length}
 
-DISTRIBUCIÓN POR DÍA
-Lunes,18
-Martes,22
-Miércoles,25
-Jueves,20
-Viernes,28
-Sábado,15
-Domingo,8`;
+CITAS POR TIPO
+${typeLines || 'Sin datos'}
+
+COMUNICACIONES POR CANAL
+${Object.entries(
+  comms.reduce((acc,c) => { const ch = c.channel||'otro'; acc[ch]=(acc[ch]||0)+1; return acc; }, {})
+).map(([ch,n]) => `${ch},${n}`).join('\n') || 'Sin datos'}`;
 
     // Download CSV file
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -404,6 +463,8 @@ Domingo,8`;
 
   downloadPDF() {
     App.showNotification('Generando PDF', 'El reporte está siendo generado...', 'info');
+
+    const { appointments, clients, comms, completed, pending, typeLines, periodLabel } = this._reportSnapshot();
 
     // Generate HTML report that can be printed as PDF
     const reportHTML = `
@@ -430,26 +491,20 @@ Domingo,8`;
                 </div>
                 
                 <div class="section">
-                    <h2>📊 Resumen Financiero</h2>
-                    <div class="stat-row"><span>Ingresos del Período</span><span class="stat-value">$45,280</span></div>
-                    <div class="stat-row"><span>Gastos Operativos</span><span class="stat-value">$12,450</span></div>
-                    <div class="stat-row"><span>Ganancia Neta</span><span class="stat-value">$32,830</span></div>
-                    <div class="stat-row"><span>Ticket Promedio</span><span class="stat-value">$385</span></div>
+                    <h2>📅 Actividad — ${periodLabel}</h2>
+                    <div class="stat-row"><span>Total Citas</span><span class="stat-value">${appointments.length}</span></div>
+                    <div class="stat-row"><span>Citas Completadas</span><span class="stat-value">${completed}</span></div>
+                    <div class="stat-row"><span>Citas Pendientes/Confirmadas</span><span class="stat-value">${pending}</span></div>
+                    <div class="stat-row"><span>Total Clientes</span><span class="stat-value">${clients.length}</span></div>
+                    <div class="stat-row"><span>Mensajes Enviados</span><span class="stat-value">${comms.length}</span></div>
                 </div>
-                
+
                 <div class="section">
-                    <h2>📅 Actividad</h2>
-                    <div class="stat-row"><span>Total Citas</span><span class="stat-value">186</span></div>
-                    <div class="stat-row"><span>Nuevos Pacientes</span><span class="stat-value">24</span></div>
-                    <div class="stat-row"><span>Mensajes Enviados</span><span class="stat-value">312</span></div>
-                </div>
-                
-                <div class="section">
-                    <h2>🎯 Servicios Más Solicitados</h2>
-                    <div class="stat-row"><span>Consultas Generales</span><span class="stat-value">35%</span></div>
-                    <div class="stat-row"><span>Vacunaciones</span><span class="stat-value">25%</span></div>
-                    <div class="stat-row"><span>Cirugías</span><span class="stat-value">15%</span></div>
-                    <div class="stat-row"><span>Laboratorio</span><span class="stat-value">12%</span></div>
+                    <h2>🎯 Citas por Tipo</h2>
+                    ${typeLines.split('\n').map(l => {
+                      const [t,n] = l.split(',');
+                      return t ? `<div class="stat-row"><span>${t}</span><span class="stat-value">${n}</span></div>` : '';
+                    }).join('')}
                 </div>
                 
                 <div class="footer">

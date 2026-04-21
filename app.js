@@ -266,25 +266,40 @@ const App = {
         }
     },
 
+    // Check if a messaging integration is active (WhatsApp, email, SMS)
+    isIntegrationConfigured(channel) {
+        const settings = window.AuthState?.organization || {};
+        if (channel === 'whatsapp') return !!(settings.whatsapp_token || settings.twilio_sid);
+        if (channel === 'email') return !!(settings.smtp_host || settings.sendgrid_key);
+        return false;
+    },
+
     sendConfirmationMessage(appointment) {
+        // Only fire if an actual messaging integration is configured
+        if (!this.isIntegrationConfigured('whatsapp') && !this.isIntegrationConfigured('email')) return;
+
         const client = this.getClient(appointment.clientId || appointment.client_id);
         if (!client) return;
+        const channel = this.isIntegrationConfigured('whatsapp') ? 'whatsapp' : 'email';
         const message = {
             clientId: client.id,
-            channel: 'whatsapp',
+            channel,
             type: 'appointment_confirmation',
-            content: `Hola ${client.name}, tu cita ha sido confirmada para el ${appointment.date} a las ${appointment.time}.`,
+            content: `Hola ${client.name}, tu cita ha sido confirmada para el ${appointment.date || appointment.appointment_date} a las ${appointment.time || appointment.appointment_time}.`,
             status: 'sent'
         };
         this.addCommunication(message);
-        this.showNotification('Confirmación enviada', `WhatsApp enviado a ${client.name}`, 'success');
+        this.showNotification('Confirmación enviada', `Mensaje enviado a ${client.name} vía ${channel}`, 'success');
     },
 
     scheduleReminders(appointment) {
+        // Only fire if messaging is configured
+        if (!this.isIntegrationConfigured('whatsapp') && !this.isIntegrationConfigured('email')) return;
         this.showNotification('Recordatorios programados', 'Se enviarán 24h y 2h antes de la cita', 'info');
     },
 
     sendFollowUpInstructions(appointment) {
+        if (!this.isIntegrationConfigured('whatsapp') && !this.isIntegrationConfigured('email')) return;
         this.showNotification('Seguimiento enviado', 'Instrucciones de cuidado enviadas al cliente', 'success');
     },
 

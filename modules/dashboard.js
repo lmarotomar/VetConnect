@@ -9,40 +9,40 @@ const Dashboard = {
             <div>
               <div class="stat-label">Citas Hoy</div>
               <div class="stat-value" id="todayAppointments">0</div>
-              <span class="stat-change positive">+12%</span>
+              <span class="stat-change" id="todayAppointmentsLabel" style="color:var(--text-muted);font-size:0.75rem;">cargando...</span>
             </div>
             <div class="stat-icon">📅</div>
           </div>
         </div>
-        
+
         <div class="stat-card">
           <div class="stat-header">
             <div>
               <div class="stat-label">Pacientes Activos</div>
               <div class="stat-value" id="activePatients">0</div>
-              <span class="stat-change positive">+8%</span>
+              <span class="stat-change" id="activePatientsLabel" style="color:var(--text-muted);font-size:0.75rem;">cargando...</span>
             </div>
             <div class="stat-icon">🐾</div>
           </div>
         </div>
-        
+
         <div class="stat-card">
           <div class="stat-header">
             <div>
               <div class="stat-label">Mensajes Enviados</div>
               <div class="stat-value" id="messagesSent">0</div>
-              <span class="stat-change positive">+24%</span>
+              <span class="stat-change" id="messagesSentLabel" style="color:var(--text-muted);font-size:0.75rem;">cargando...</span>
             </div>
             <div class="stat-icon">💬</div>
           </div>
         </div>
-        
+
         <div class="stat-card">
           <div class="stat-header">
             <div>
               <div class="stat-label">Seguimientos</div>
               <div class="stat-value" id="followUps">0</div>
-              <span class="stat-change negative">-3%</span>
+              <span class="stat-change" id="followUpsLabel" style="color:var(--text-muted);font-size:0.75rem;">cargando...</span>
             </div>
             <div class="stat-icon">📋</div>
           </div>
@@ -121,17 +121,25 @@ const Dashboard = {
         const today = new Date().toISOString().split('T')[0];
         const todayAppointments = appointments.filter(a => (a.appointment_date || a.date) === today);
 
-        document.getElementById('todayAppointments').textContent = todayAppointments.length;
+        const set     = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        const setLabel = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+        set('todayAppointments', todayAppointments.length);
+        setLabel('todayAppointmentsLabel', todayAppointments.length === 1 ? '1 cita programada' : `${todayAppointments.length} citas programadas`);
 
         const clients = App.getClients();
-        const totalPets = clients.reduce((sum, client) => sum + (client.pets?.length || client.patients?.length || 0), 0);
-        document.getElementById('activePatients').textContent = totalPets;
+        const totalPets = clients.reduce((sum, c) => sum + (c.pets?.length || c.patients?.length || 0), 0);
+        set('activePatients', totalPets);
+        setLabel('activePatientsLabel', `en ${clients.length} cliente${clients.length !== 1 ? 's' : ''}`);
 
         const communications = App.data?.communications || [];
-        document.getElementById('messagesSent').textContent = communications.length;
+        set('messagesSent', communications.length);
+        const channels = [...new Set(communications.map(c => c.channel).filter(Boolean))];
+        setLabel('messagesSentLabel', channels.length ? `vía ${channels.join(', ')}` : 'sin integraciones activas');
 
         const followUps = appointments.filter(a => (a.type || a.appointment_type) === 'Control').length;
-        document.getElementById('followUps').textContent = followUps;
+        set('followUps', followUps);
+        setLabel('followUpsLabel', 'tipo Control');
     },
 
     loadTodayAppointments() {
@@ -261,6 +269,9 @@ const Dashboard = {
               <option value="Ave">Ave</option>
               <option value="Conejo">Conejo</option>
               <option value="Reptil">Reptil</option>
+              <option value="Caballo">Caballo</option>
+              <option value="Bovino">Bovino</option>
+              <option value="Cerdo">Cerdo</option>
               <option value="Otro">Otro</option>
             </select>
           </div>
