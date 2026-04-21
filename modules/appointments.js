@@ -8,12 +8,14 @@ const Appointments = {
       <div class="card mb-lg">
         <div class="card-body">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              <button class="btn btn-secondary" onclick="Appointments.filterBy('all')">Todas</button>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="appointmentFilters">
+              <button class="btn btn-secondary active-filter" onclick="Appointments.filterBy('all')">Todas</button>
               <button class="btn btn-secondary" onclick="Appointments.filterBy('today')">Hoy</button>
               <button class="btn btn-secondary" onclick="Appointments.filterBy('week')">Esta Semana</button>
               <button class="btn btn-secondary" onclick="Appointments.filterBy('pending')">Pendientes</button>
               <button class="btn btn-secondary" onclick="Appointments.filterBy('confirmed')">Confirmadas</button>
+              <button class="btn btn-secondary" onclick="Appointments.filterBy('completed')">Completadas</button>
+              <button class="btn btn-secondary" onclick="Appointments.filterBy('cancelled')">Canceladas</button>
             </div>
             <button class="btn btn-primary" onclick="App.showNewAppointmentModal()">
               ➕ Nueva Cita
@@ -102,6 +104,11 @@ const Appointments = {
 
     filterBy(filter) {
         this.currentFilter = filter;
+        // Update active filter button style
+        document.querySelectorAll('#appointmentFilters .btn').forEach(btn => {
+            btn.classList.remove('active-filter');
+        });
+        event?.target?.classList.add('active-filter');
         this.loadAppointments();
     },
 
@@ -128,6 +135,12 @@ const Appointments = {
                 break;
             case 'confirmed':
                 appointments = appointments.filter(a => a.status === 'confirmed');
+                break;
+            case 'completed':
+                appointments = appointments.filter(a => a.status === 'completed');
+                break;
+            case 'cancelled':
+                appointments = appointments.filter(a => a.status === 'cancelled');
                 break;
         }
 
@@ -181,10 +194,26 @@ const Appointments = {
         const aptDate = appointment.appointment_date || appointment.date || '';
         const aptTime = (appointment.appointment_time || appointment.time || '').slice(0, 5);
 
-        const statusBadge = appointment.status === 'confirmed' ? 'badge-success' :
-            appointment.status === 'pending' ? 'badge-warning' : 'badge-info';
-        const statusText = appointment.status === 'confirmed' ? 'Confirmada' :
-            appointment.status === 'pending' ? 'Pendiente' : appointment.status;
+        const statusMap = {
+            pending:   { badge: 'badge-warning', text: 'Pendiente' },
+            confirmed: { badge: 'badge-success', text: 'Confirmada' },
+            completed: { badge: 'badge-info',    text: 'Completada' },
+            cancelled: { badge: 'badge-error',   text: 'Cancelada'  }
+        };
+        const { badge: statusBadge, text: statusText } = statusMap[appointment.status] || { badge: 'badge-warning', text: appointment.status };
+
+        // Action buttons depend on current status
+        const actions = [];
+        actions.push(`<button class="btn btn-secondary btn-icon" onclick="Appointments.viewAppointment('${appointment.id}')" title="Ver detalles">👁️</button>`);
+
+        if (appointment.status === 'pending') {
+            actions.push(`<button class="btn btn-secondary btn-icon" style="color:var(--accent-teal);" onclick="Appointments.confirmAppointment('${appointment.id}')" title="Confirmar">✓</button>`);
+            actions.push(`<button class="btn btn-secondary btn-icon" style="color:var(--error);" onclick="Appointments.cancelAppointment('${appointment.id}')" title="Cancelar">✕</button>`);
+        }
+        if (appointment.status === 'confirmed') {
+            actions.push(`<button class="btn btn-primary btn-sm" onclick="Appointments.completeAppointment('${appointment.id}')" title="Marcar completada">Completar</button>`);
+            actions.push(`<button class="btn btn-secondary btn-icon" style="color:var(--error);" onclick="Appointments.cancelAppointment('${appointment.id}')" title="Cancelar">✕</button>`);
+        }
 
         return `
       <tr>
@@ -203,9 +232,8 @@ const Appointments = {
         <td>${appointment.type || appointment.appointment_type || ''}</td>
         <td><span class="badge ${statusBadge}">${statusText}</span></td>
         <td>
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn btn-secondary btn-icon" onclick="Appointments.viewAppointment(${appointment.id})" title="Ver detalles">👁️</button>
-            <button class="btn btn-secondary btn-icon" onclick="Appointments.completeAppointment(${appointment.id})" title="Completar">✓</button>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            ${actions.join('')}
           </div>
         </td>
       </tr>
@@ -275,13 +303,83 @@ const Appointments = {
         App.showModal('Detalles de la Cita', content);
     },
 
+    confirmAppointment(id) {
+        if (!confirm('¿Confirmar esta cita?')) return;
+        App.updateAppointment(id, { status: 'confirmed' });
+        App.showNotification('Cita confirmada', 'El estado ha sido actualizado a Confirmada', 'success');
+        this.loadAppointments();
+    },
+
+    cancelAppointment(id) {
+        if (!confirm('¿Cancelar esta cita? Esta acción no se puede deshacer.')) return;
+        App.updateAppointment(id, { status: 'cancelled' });
+        App.showNotification('Cita cancelada', 'La cita ha sido marcada como cancelada', 'info');
+        this.loadAppointments();
+    },
+
     completeAppointment(id) {
         const appointment = App.getAppointment(id);
         if (!appointment) return;
 
-        App.updateAppointment(id, { status: 'completed' });
+        const client = appointment.client || App.getClient(appointment.clientId || appointment.client_id);
+        const pet    = appointment.patient || client?.pets?.find(p => p.id === (appointment.petId || appointment.patient_id));
+
+        const content = `
+      <div style="display:flex;flex-direction:column;gap:1.25rem;">
+        <div style="padding:1rem;background:var(--bg-glass);border-radius:var(--radius-md);">
+          <div style="font-weight:600;margin-bottom:0.25rem;">
+            ${pet?.name || 'Mascota'} — ${client?.name || 'Cliente'}
+          </div>
+          <div class="text-muted" style="font-size:0.875rem;">
+            ${appointment.type || ''} · ${App.formatDate(appointment.appointment_date || appointment.date)}
+          </div>
+        </div>
+
+        <p style="color:var(--text-muted);font-size:0.9rem;">
+          ¿Deseas crear una historia clínica para esta consulta ahora?
+        </p>
+
+        <div style="display:flex;flex-direction:column;gap:0.75rem;">
+          <button class="btn btn-primary" onclick="Appointments._doComplete('${id}', true)">
+            ✓ Completar y abrir Historia Clínica
+          </button>
+          <button class="btn btn-secondary" onclick="Appointments._doComplete('${id}', false)">
+            Completar sin historia clínica
+          </button>
+          <button class="btn btn-secondary" onclick="App.closeModal()">Cancelar</button>
+        </div>
+      </div>`;
+
+        App.showModal('Completar Cita', content);
+    },
+
+    async _doComplete(id, openRecord) {
+        const appointment = App.getAppointment(id);
+        App.closeModal();
+        await App.updateAppointment(id, { status: 'completed' });
         App.triggerAutomation('appointment_completed', appointment);
-        App.showNotification('Cita completada', 'Se han enviado instrucciones de seguimiento al cliente', 'success');
+        App.showNotification('Cita completada', 'Estado actualizado correctamente', 'success');
         this.loadAppointments();
+
+        if (openRecord && appointment) {
+            const client = appointment.client || App.getClient(appointment.clientId || appointment.client_id);
+            const pets   = client?.pets || client?.patients || [];
+            const petId  = appointment.petId || appointment.patient_id;
+            const pet    = appointment.patient || pets.find(p => String(p.id) === String(petId));
+
+            if (pet && client) {
+                // Pre-select patient in Clinical Records and open form
+                App.navigateTo('clinical-records');
+                setTimeout(() => {
+                    const select = document.getElementById('patientSelect');
+                    if (select) {
+                        const val = `${client.id}||${pet.id}`;
+                        select.value = val;
+                        ClinicalRecords.selectPet(val);
+                        setTimeout(() => ClinicalRecords.showNewRecordForm(), 300);
+                    }
+                }, 400);
+            }
+        }
     }
 };

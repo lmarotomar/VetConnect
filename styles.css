@@ -546,6 +546,16 @@ body::before {
   color: #FFFFFF;
 }
 
+.badge-error {
+  background: rgba(245, 87, 108, 0.2);
+  color: #f5576c;
+}
+
+.active-filter {
+  background: var(--brand-green) !important;
+  color: #000 !important;
+}
+
 /* Modal */
 .modal-overlay {
   position: fixed;
