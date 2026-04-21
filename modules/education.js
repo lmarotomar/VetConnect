@@ -1,6 +1,6 @@
 // Education Module
 const Education = {
-  categories: ['Todas', 'Vacunación', 'Nutrición', 'Comportamiento', 'Emergencias', 'Cuidados', 'Prevención'],
+  categories: ['Todas', 'Nutrición', 'Comportamiento', 'Emergencias', 'Cuidados', 'Vacunación & Prevención'],
   selectedCategory: 'Todas',
   _customContent: [], // content added this session
 
@@ -320,7 +320,7 @@ const Education = {
   getEducationalContent() {
     return [
       {
-        id: 1, icon: '💉', category: 'Vacunación',
+        id: 1, icon: '💉', category: 'Vacunación & Prevención',
         title: 'Cuidados Post-Vacunación',
         summary: 'Guía completa sobre qué esperar y cómo cuidar a tu mascota después de la vacunación.',
         content: `<h3>Cuidados Post-Vacunación</h3>
@@ -376,7 +376,7 @@ const Education = {
           <li>Pérdida de consciencia</li><li>Convulsiones</li></ul>`
       },
       {
-        id: 5, icon: '🪱', category: 'Prevención',
+        id: 5, icon: '🪱', category: 'Vacunación & Prevención',
         title: 'Prevención de Parásitos',
         summary: 'Cómo proteger a tu mascota de parásitos internos y externos.',
         content: `<h3>Prevención de Parásitos</h3>
