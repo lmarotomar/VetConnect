@@ -283,6 +283,35 @@ const DB = {
         return data;
     },
 
+    async addInventoryMovement(movement) {
+        const { data, error } = await supabase
+            .from('inventory_movements')
+            .insert([{
+                organization_id: this._orgId(),
+                product_id:      movement.productId,
+                type:            movement.type,
+                quantity:        movement.quantity,
+                stock_before:    movement.stockBefore,
+                stock_after:     movement.stockAfter,
+                notes:           movement.notes || null,
+                created_by:      window.AuthState?.profile?.name || null
+            }])
+            .select()
+            .single();
+        if (error) console.error('DB.addInventoryMovement:', error.message);
+        return data;
+    },
+
+    async getInventoryMovements(productId) {
+        const { data, error } = await supabase
+            .from('inventory_movements')
+            .select('*')
+            .eq('product_id', productId)
+            .order('created_at', { ascending: false });
+        if (error) console.error('DB.getInventoryMovements:', error.message);
+        return data || [];
+    },
+
     // ─── INVOICES ─────────────────────────────────────────────────────────────
 
     async getInvoices() {

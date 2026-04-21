@@ -399,6 +399,7 @@ const Inventory = {
   async saveAdjustment(productId) {
     const type     = document.getElementById('adjustmentType')?.value;
     const quantity = parseFloat(document.getElementById('adjustmentQuantity')?.value) || 0;
+    const notes    = document.getElementById('adjustmentNotes')?.value.trim() || null;
 
     if (quantity <= 0) {
       App.showNotification('Error', 'La cantidad debe ser mayor a 0', 'error');
@@ -408,18 +409,22 @@ const Inventory = {
     const product = this.getProducts().find(p => String(p.id) === String(productId));
     if (!product) return;
 
-    const isInbound = ['purchase', 'return', 'adjustment'].includes(type);
-    const delta     = isInbound ? quantity : -quantity;
-    const newStock  = Math.max(0, (product.current_stock || 0) + delta);
+    const isInbound  = ['purchase', 'return', 'adjustment'].includes(type);
+    const delta      = isInbound ? quantity : -quantity;
+    const stockBefore = product.current_stock || 0;
+    const stockAfter  = Math.max(0, stockBefore + delta);
 
     try {
-      const saved = await DB.updateInventoryItem(productId, { current_stock: newStock });
-      // Update local cache
+      const saved = await DB.updateInventoryItem(productId, { current_stock: stockAfter });
+      await DB.addInventoryMovement({
+        productId, type, quantity, stockBefore, stockAfter, notes
+      });
+
       const idx = App.data.inventory.findIndex(p => String(p.id) === String(productId));
       if (idx !== -1) App.data.inventory[idx] = { ...App.data.inventory[idx], ...saved };
 
       App.closeModal();
-      App.showNotification('Stock Actualizado', `${product.name}: ${product.current_stock} → ${newStock}`, 'success');
+      App.showNotification('Stock Actualizado', `${product.name}: ${stockBefore} → ${stockAfter}`, 'success');
       App.loadView('inventory');
     } catch (err) {
       App.showNotification('Error', `No se pudo actualizar el stock: ${err.message}`, 'error');
@@ -668,60 +673,54 @@ const Inventory = {
     }
   },
 
-  viewHistory(id) {
-    const product = this.getProducts().find(p => p.id === id);
+  async viewHistory(id) {
+    const product = this.getProducts().find(p => String(p.id) === String(id));
     if (!product) return;
 
-    // Mock history data
-    const history = [
-      { date: '2025-01-10', type: 'Entrada', quantity: '+20', reason: 'Compra a proveedor', user: 'Admin' },
-      { date: '2025-01-08', type: 'Salida', quantity: '-3', reason: 'Venta - Factura INV-2025-001', user: 'Veterinario' },
-      { date: '2025-01-05', type: 'Salida', quantity: '-2', reason: 'Venta - Factura INV-2025-002', user: 'Veterinario' },
-      { date: '2025-01-01', type: 'Ajuste', quantity: '+5', reason: 'Inventario inicial', user: 'Admin' }
-    ];
+    const typeLabels = {
+      purchase: 'Compra', sale: 'Venta', adjustment: 'Ajuste', waste: 'Merma', return: 'Devolución'
+    };
+
+    const history = await DB.getInventoryMovements(id);
+
+    const rows = history.length === 0
+      ? `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">Sin movimientos registrados</td></tr>`
+      : history.map(h => {
+          const isInbound = ['purchase', 'return', 'adjustment'].includes(h.type);
+          const delta     = h.stock_after - h.stock_before;
+          const sign      = delta >= 0 ? '+' : '';
+          const color     = delta >= 0 ? 'var(--brand-green)' : '#ff6b6b';
+          const badgeClass = isInbound ? 'badge-success' : h.type === 'waste' ? 'badge-error' : 'badge-warning';
+          const date = new Date(h.created_at).toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' });
+          return `
+            <tr>
+              <td>${date}</td>
+              <td><span class="badge ${badgeClass}">${typeLabels[h.type] || h.type}</span></td>
+              <td style="font-weight:600;color:${color};">${sign}${h.quantity}</td>
+              <td style="color:var(--text-muted);font-size:0.875rem;">${h.notes || '—'}</td>
+              <td>${h.created_by || '—'}</td>
+            </tr>`;
+        }).join('');
 
     const modalContent = `
-            <div style="padding: 1rem;">
-                <div style="margin-bottom: 1.5rem;">
-                    <h3 style="color: var(--brand-gold);">${product.name}</h3>
-                    <p style="color: var(--text-muted);">SKU: ${product.sku} | Stock actual: ${product.current_stock} ${product.unit}</p>
-                </div>
+      <div style="margin-bottom:1.5rem;">
+        <h3 style="color:var(--brand-gold);">${product.name}</h3>
+        <p style="color:var(--text-muted);">SKU: ${product.sku || '—'} | Stock actual: ${product.current_stock} ${product.unit || ''}</p>
+      </div>
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr><th>Fecha</th><th>Tipo</th><th>Cantidad</th><th>Notas</th><th>Usuario</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+        <button class="btn btn-primary" onclick="Inventory.exportProductHistory('${id}')">📥 Exportar</button>
+        <button class="btn btn-secondary" onclick="App.closeModal()">Cerrar</button>
+      </div>`;
 
-                <div class="table-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Tipo</th>
-                                <th>Cantidad</th>
-                                <th>Motivo</th>
-                                <th>Usuario</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${history.map(h => `
-                                <tr>
-                                    <td>${h.date}</td>
-                                    <td><span class="badge ${h.type === 'Entrada' ? 'badge-success' : h.type === 'Salida' ? 'badge-warning' : 'badge-info'}">${h.type}</span></td>
-                                    <td style="font-weight: 600; color: ${h.quantity.startsWith('+') ? 'var(--brand-green)' : '#ff6b6b'};">${h.quantity}</td>
-                                    <td>${h.reason}</td>
-                                    <td>${h.user}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-
-                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                    <button class="btn btn-primary" onclick="Inventory.exportProductHistory(${id})">📥 Exportar Historial</button>
-                    <button class="btn btn-secondary" onclick="App.closeModal()">Cerrar</button>
-                </div>
-            </div>
-        `;
-
-    if (typeof App !== 'undefined') {
-      App.showModal(`📊 Historial de Movimientos`, modalContent, { wide: true });
-    }
+    App.showModal('📊 Historial de Movimientos', modalContent, { wide: true });
   },
 
   exportProductHistory(id) {
