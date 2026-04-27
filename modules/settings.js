@@ -368,16 +368,8 @@ const Settings = {
     },
 
     async testWhatsApp() {
-        // Save first, then test
         const btn = document.getElementById('btnTestWA');
         if (btn) { btn.disabled = true; btn.textContent = '⏳ Probando...'; }
-
-        try {
-            await this.saveIntegration('whatsapp');
-        } catch {
-            if (btn) { btn.disabled = false; btn.textContent = '🧪 Probar'; }
-            return; // saveIntegration already showed the error
-        }
 
         const orgId = window.AuthState?.organization?.id;
         if (!orgId) {
