@@ -277,22 +277,42 @@ const App = {
         return false;
     },
 
-    sendConfirmationMessage(appointment) {
-        // Only fire if an actual messaging integration is configured
-        if (!this.isIntegrationConfigured('whatsapp') && !this.isIntegrationConfigured('email')) return;
+    async sendConfirmationMessage(appointment) {
+        if (!this.isIntegrationConfigured('whatsapp')) return;
 
         const client = this.getClient(appointment.clientId || appointment.client_id);
-        if (!client) return;
-        const channel = this.isIntegrationConfigured('whatsapp') ? 'whatsapp' : 'email';
-        const message = {
-            clientId: client.id,
-            channel,
-            type: 'appointment_confirmation',
-            content: `Hola ${client.name}, tu cita ha sido confirmada para el ${appointment.date || appointment.appointment_date} a las ${appointment.time || appointment.appointment_time}.`,
-            status: 'sent'
-        };
-        this.addCommunication(message);
-        this.showNotification('Confirmación enviada', `Mensaje enviado a ${client.name} vía ${channel}`, 'success');
+        if (!client?.phone) return; // No phone → skip silently
+
+        const orgId = window.AuthState?.organization?.id;
+        if (!orgId) return;
+
+        // Enrich appointment with client + patient for the edge function
+        const patient = this.data?.patients?.find(p =>
+            p.id === (appointment.patientId || appointment.patient_id)
+        ) || null;
+
+        try {
+            const { data, error } = await supabase.functions.invoke('send-immediate', {
+                body: {
+                    type:            'appointment_confirmation',
+                    organization_id: orgId,
+                    appointment: {
+                        ...appointment,
+                        client:  { id: client.id, name: client.name, phone: client.phone, email: client.email },
+                        patient: patient ? { id: patient.id, name: patient.name } : null
+                    }
+                }
+            });
+
+            if (error || data?.error) {
+                console.warn('sendConfirmationMessage edge error:', error?.message || data?.error);
+                return;
+            }
+
+            this.showNotification('WhatsApp enviado', `Confirmación enviada a ${client.name}`, 'success');
+        } catch (err) {
+            console.warn('sendConfirmationMessage failed:', err.message);
+        }
     },
 
     scheduleReminders(appointment) {

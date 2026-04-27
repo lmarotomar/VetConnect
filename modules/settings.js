@@ -287,12 +287,18 @@ const Settings = {
             <input type="tel" class="form-input" id="int_twilio_phone"
               value="${org.twilio_phone || ''}" placeholder="+15550000000">
           </div>
-          <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+          <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
             <button class="btn btn-primary" style="flex:1;" onclick="Settings.saveIntegration('whatsapp')">
               💾 Guardar
             </button>
+            <button class="btn btn-secondary" id="btnTestWA" onclick="Settings.testWhatsApp()">
+              🧪 Probar
+            </button>
             <button class="btn btn-secondary" onclick="App.closeModal()">Cancelar</button>
-          </div>`;
+          </div>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.75rem;">
+            "Probar" guarda primero y envía un WhatsApp de prueba al número configurado.
+          </p>`;
         }
 
         if (id === 'email') {
@@ -358,6 +364,46 @@ const Settings = {
         } catch (err) {
             App.showNotification('Error', 'No se pudo guardar la integración', 'error');
             console.error('saveIntegration:', err);
+        }
+    },
+
+    async testWhatsApp() {
+        // Save first, then test
+        const btn = document.getElementById('btnTestWA');
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Probando...'; }
+
+        try {
+            await this.saveIntegration('whatsapp');
+        } catch {
+            if (btn) { btn.disabled = false; btn.textContent = '🧪 Probar'; }
+            return; // saveIntegration already showed the error
+        }
+
+        const orgId = window.AuthState?.organization?.id;
+        if (!orgId) {
+            App.showNotification('Error', 'No se pudo obtener la organización', 'error');
+            if (btn) { btn.disabled = false; btn.textContent = '🧪 Probar'; }
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase.functions.invoke('send-immediate', {
+                body: { type: 'test', organization_id: orgId }
+            });
+
+            if (error) throw new Error(error.message);
+            if (data?.error) throw new Error(data.error);
+
+            App.showNotification(
+                '✅ WhatsApp enviado',
+                `Mensaje de prueba enviado. ID: ${data?.messageId || 'OK'}`,
+                'success'
+            );
+        } catch (err) {
+            App.showNotification('Error al probar', err.message, 'error');
+            console.error('testWhatsApp:', err);
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = '🧪 Probar'; }
         }
     },
 
