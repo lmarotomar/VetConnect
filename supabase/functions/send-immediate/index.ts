@@ -139,32 +139,40 @@ function buildTemplatePayload(
 
 // ─── MAIN HANDLER ─────────────────────────────────────────────────────────────
 
+const CORS_HEADERS = {
+    'Access-Control-Allow-Origin':  '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+};
+
 Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
-        return new Response(null, {
-            headers: {
-                'Access-Control-Allow-Origin':  '*',
-                'Access-Control-Allow-Headers': 'authorization, content-type'
-            }
-        });
+        return new Response(null, { headers: CORS_HEADERS });
     }
 
-    // Auth
-    const token = (req.headers.get('Authorization') || '').replace('Bearer ', '');
-    if (token !== SUPABASE_ANON_KEY && token !== SUPABASE_SERVICE_KEY) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    // Auth — accept anon key (apikey header) OR service key OR a valid session JWT
+    const apikey = req.headers.get('apikey') || '';
+    const bearer = (req.headers.get('Authorization') || '').replace('Bearer ', '');
+    const isAuthorized =
+        apikey === SUPABASE_ANON_KEY ||
+        bearer === SUPABASE_ANON_KEY ||
+        bearer === SUPABASE_SERVICE_KEY;
+
+    if (!isAuthorized) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+        });
     }
 
     let body: any;
     try { body = await req.json(); }
-    catch { return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 }); }
+    catch { return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400, headers: CORS_HEADERS }); }
 
     const { type, appointment, organization_id } = body;
 
     if (!type || !organization_id) {
         return new Response(
             JSON.stringify({ error: 'Missing required fields: type, organization_id' }),
-            { status: 400 }
+            { status: 400, headers: CORS_HEADERS }
         );
     }
 
@@ -176,7 +184,7 @@ Deno.serve(async (req) => {
         .single();
 
     if (orgErr || !org) {
-        return new Response(JSON.stringify({ error: 'Organization not found' }), { status: 404 });
+        return new Response(JSON.stringify({ error: 'Organization not found' }), { status: 404, headers: CORS_HEADERS });
     }
 
     // Determine recipient
@@ -187,7 +195,7 @@ Deno.serve(async (req) => {
     if (!recipientPhone) {
         return new Response(
             JSON.stringify({ error: 'No hay número de teléfono para el destinatario' }),
-            { status: 422 }
+            { status: 422, headers: CORS_HEADERS }
         );
     }
 
@@ -196,7 +204,7 @@ Deno.serve(async (req) => {
         payload = buildTemplatePayload(type, appointment || {}, org.name);
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Unknown error';
-        return new Response(JSON.stringify({ error: message }), { status: 400 });
+        return new Response(JSON.stringify({ error: message }), { status: 400, headers: CORS_HEADERS });
     }
 
     try {
@@ -218,12 +226,12 @@ Deno.serve(async (req) => {
 
         return new Response(JSON.stringify(result), {
             status:  200,
-            headers: { 'Content-Type': 'application/json' }
+            headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
         });
 
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         console.error('sendTemplate error:', message);
-        return new Response(JSON.stringify({ error: message }), { status: 502 });
+        return new Response(JSON.stringify({ error: message }), { status: 502, headers: CORS_HEADERS });
     }
 });
