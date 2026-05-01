@@ -219,10 +219,11 @@ const Settings = {
         const org = window.AuthState?.organization || {};
         const integrations = [
             {
-                id:    'whatsapp',
-                name:  'WhatsApp Business (Meta)',
-                icon:  '📱',
-                active: true
+                id:         'whatsapp',
+                name:       'WhatsApp Business (Meta)',
+                icon:       '📱',
+                active:     true,
+                btnLabel:   '🧪 Probar'
             },
             {
                 id:    'email',
@@ -255,7 +256,7 @@ const Settings = {
               ${i.soon
                 ? `<span class="badge" style="background:var(--bg-glass);color:var(--text-muted);">v2</span>`
                 : `<button class="btn btn-secondary" onclick="Settings.configureIntegration('${i.id}')">
-                    ${i.active ? 'Editar' : 'Configurar'}
+                    ${i.btnLabel || (i.active ? 'Editar' : 'Configurar')}
                    </button>`
               }
             </div>`).join('')}
