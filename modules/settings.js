@@ -362,9 +362,13 @@ const Settings = {
         }
 
         try {
-            const { data, error } = await supabase.functions.invoke('send-immediate', {
+            const timeout = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Timeout: la función no respondió en 20s')), 20_000)
+            );
+            const invoke  = supabase.functions.invoke('send-immediate', {
                 body: { type: 'test', organization_id: orgId }
             });
+            const { data, error } = await Promise.race([invoke, timeout]);
 
             if (error) throw new Error(error.message);
             if (data?.error) throw new Error(data.error);
