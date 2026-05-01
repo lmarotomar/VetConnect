@@ -1,130 +1,156 @@
 // VetConnect — Supabase Edge Function: process-jobs
 // Runs on a cron schedule (every hour via Supabase Dashboard → Edge Functions → Cron)
-// Reads pending scheduled_jobs, sends WhatsApp via Twilio, marks jobs complete.
+// Reads pending scheduled_jobs, sends WhatsApp templates via Meta Cloud API directly.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const SUPABASE_URL             = Deno.env.get('SUPABASE_URL')!;
-const SUPABASE_SERVICE_KEY     = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const VETPROMPT_WEBHOOK_URL    = Deno.env.get('VETPROMPT_WEBHOOK_URL')!;
-const VETPROMPT_WEBHOOK_SECRET = Deno.env.get('VETPROMPT_WEBHOOK_SECRET')!;
+const SUPABASE_URL         = Deno.env.get('SUPABASE_URL')!;
+const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const META_WHATSAPP_TOKEN  = Deno.env.get('META_WHATSAPP_TOKEN')!;
+const META_PHONE_NUMBER_ID = Deno.env.get('META_PHONE_NUMBER_ID')!;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-// ─── SEND VIA VETPROMPT ───────────────────────────────────────────────────────
+// ─── TYPES ────────────────────────────────────────────────────────────────────
 
-async function sendViaVetPrompt(
-    to: string,
-    message: string,
-    type: string
+interface NamedParam {
+    name:  string;
+    value: string;
+}
+
+interface TemplatePayload {
+    templateName: string;
+    params:       NamedParam[];
+}
+
+// ─── SEND TEMPLATE VIA META CLOUD API ────────────────────────────────────────
+
+async function sendTemplate(
+    to:           string,
+    templateName: string,
+    params:       NamedParam[]
 ): Promise<{ success: true; messageId: string }> {
-    const res = await fetch(VETPROMPT_WEBHOOK_URL, {
-        method:  'POST',
-        headers: {
-            'Content-Type':        'application/json',
-            'x-vetconnect-secret': VETPROMPT_WEBHOOK_SECRET
-        },
-        body: JSON.stringify({ to, message, type })
-    });
+    const res = await fetch(
+        `https://graph.facebook.com/v25.0/${META_PHONE_NUMBER_ID}/messages`,
+        {
+            method:  'POST',
+            headers: {
+                'Content-Type':  'application/json',
+                'Authorization': `Bearer ${META_WHATSAPP_TOKEN}`
+            },
+            body: JSON.stringify({
+                messaging_product: 'whatsapp',
+                to,
+                type: 'template',
+                template: {
+                    name:     templateName,
+                    language: { code: 'es' },
+                    components: [{
+                        type:       'body',
+                        parameters: params.map(p => ({
+                            type:           'text',
+                            text:           p.value,
+                            parameter_name: p.name
+                        }))
+                    }]
+                }
+            })
+        }
+    );
 
     const data = await res.json() as any;
     if (!res.ok || data.error) {
-        throw new Error(data.error || `VetPrompt webhook responded ${res.status}`);
+        throw new Error(data.error?.message || `Meta API responded ${res.status}`);
     }
-    return { success: true, messageId: data.messageId };
+    return { success: true, messageId: data.messages?.[0]?.id };
 }
 
-// ─── MESSAGE BUILDERS ─────────────────────────────────────────────────────────
+// ─── TEMPLATE BUILDERS ───────────────────────────────────────────────────────
 
-function buildMessage(type: string, appt: any, clinicName: string): string {
-    const clientName = appt?.client?.name || 'Cliente';
-    const petName    = appt?.patient?.name || 'tu mascota';
+function buildTemplatePayload(
+    type:       string,
+    appt:       any,
+    clinicName: string
+): TemplatePayload {
+    const clientName = appt?.client?.name     || 'Cliente';
+    const petName    = appt?.patient?.name    || 'tu mascota';
     const date       = appt?.appointment_date || '';
     const time       = appt?.appointment_time || '';
 
     switch (type) {
         case 'reminder_24h':
-            return [
-                `Recordatorio de cita ⏰`,
-                '',
-                `Hola ${clientName}, te recordamos tu cita *mañana*:`,
-                `📅 ${date} a las ${time}`,
-                `🐾 ${petName}`,
-                '',
-                'Por favor responde:',
-                '1. ¿Cuál es el motivo principal de la consulta?',
-                '2. ¿Ha presentado algún síntoma?',
-                '3. ¿Come y bebe con normalidad?',
-                '',
-                'Tus respuestas nos ayudan a preparar mejor la consulta.',
-                `— ${clinicName}`
-            ].join('\n');
+            return {
+                templateName: 'vetconnect_recordatorio_24h',
+                params: [
+                    { name: 'cliente_nombre', value: clientName },
+                    { name: 'cita_fecha',     value: date       },
+                    { name: 'cita_hora',      value: time       },
+                    { name: 'mascota_nombre', value: petName    },
+                    { name: 'clinica_nombre', value: clinicName }
+                ]
+            };
 
         case 'reminder_2h':
-            return [
-                `⏰ Tu cita es en 2 horas`,
-                '',
-                `${clientName}, te esperamos hoy a las *${time}* para la consulta de ${petName}.`,
-                '',
-                `¡Nos vemos pronto! 🐾`,
-                `— ${clinicName}`
-            ].join('\n');
+            return {
+                templateName: 'vetconnect_recordatorio_2h',
+                params: [
+                    { name: 'cita_hora',      value: time       },
+                    { name: 'mascota_nombre', value: petName    },
+                    { name: 'cliente_nombre', value: clientName },
+                    { name: 'clinica_nombre', value: clinicName }
+                ]
+            };
 
         case 'follow_up':
-            return [
-                `Seguimiento de ${petName} 🔄`,
-                '',
-                `Hola ${clientName}, ¿cómo ha evolucionado ${petName} después de la consulta?`,
-                '',
-                'Cuéntanos:',
-                '• ¿Ha mejorado su condición?',
-                '• ¿Alguna duda sobre el tratamiento?',
-                '',
-                'Estamos para ayudarte 🐾',
-                `— ${clinicName}`
-            ].join('\n');
+            return {
+                templateName: 'vetconnect_seguimiento',
+                params: [
+                    { name: 'mascota_nombre', value: petName    },
+                    { name: 'cita_fecha',     value: date       },
+                    { name: 'cliente_nombre', value: clientName },
+                    { name: 'clinica_nombre', value: clinicName }
+                ]
+            };
 
         default:
-            return `Recordatorio de cita — ${clinicName}`;
+            throw new Error(`Unknown job type: ${type}`);
     }
 }
 
 // ─── JOB PROCESSOR ───────────────────────────────────────────────────────────
 
 async function processJob(job: any): Promise<void> {
-    // Mark as processing
     await supabase
         .from('scheduled_jobs')
-        .update({ status: 'processing', last_attempt_at: new Date().toISOString(), attempts: (job.attempts || 0) + 1 })
+        .update({
+            status:          'processing',
+            last_attempt_at: new Date().toISOString(),
+            attempts:        (job.attempts || 0) + 1
+        })
         .eq('id', job.id);
 
     const appt   = job.appointment;
     const client = appt?.client;
     const org    = appt?.organization;
 
-    if (!appt)         throw new Error(`No appointment for job ${job.id}`);
+    if (!appt)          throw new Error(`No appointment for job ${job.id}`);
     if (!client?.phone) throw new Error(`No phone for client in job ${job.id}`);
-    if (!org?.twilio_sid || !org?.twilio_auth_token || !org?.twilio_phone) {
-        throw new Error(`Twilio not configured for org in job ${job.id}`);
-    }
+    if (!org?.name)     throw new Error(`No organization name for job ${job.id}`);
 
-    const messageText = buildMessage(job.job_type, appt, org.name);
+    const payload = buildTemplatePayload(job.job_type, appt, org.name);
+    const result  = await sendTemplate(client.phone, payload.templateName, payload.params);
 
-    const result = await sendViaVetPrompt(client.phone, messageText, job.job_type);
-
-    // Mark job complete
     await supabase
         .from('scheduled_jobs')
         .update({ status: 'completed', result: JSON.stringify(result) })
         .eq('id', job.id);
 
-    // Log communication
     await supabase.from('communications').insert({
         client_id:       client.id,
         organization_id: job.organization_id,
         channel:         'whatsapp',
         type:            job.job_type,
-        content:         messageText,
+        content:         payload.templateName,
         status:          'sent',
         sent_at:         new Date().toISOString(),
         external_id:     result.messageId
@@ -136,7 +162,6 @@ async function processJob(job: any): Promise<void> {
 Deno.serve(async (_req) => {
     const now = new Date().toISOString();
 
-    // Fetch pending jobs with all required relations including org credentials
     const { data: jobs, error } = await supabase
         .from('scheduled_jobs')
         .select(`
@@ -147,7 +172,7 @@ Deno.serve(async (_req) => {
                 appointment_time,
                 type,
                 organization_id,
-                organization:organizations(name, twilio_sid, twilio_auth_token, twilio_phone),
+                organization:organizations(name),
                 client:clients(id, name, phone, email),
                 patient:patients(id, name, species)
             )
@@ -168,19 +193,17 @@ Deno.serve(async (_req) => {
 
     const results = await Promise.allSettled(jobs.map(job => processJob(job)));
 
-    // Handle failures — retry up to 3 times, then mark failed
     await Promise.allSettled(
         results.map(async (r, i) => {
             if (r.status === 'rejected') {
-                const job      = jobs[i];
-                const attempts = (job.attempts || 0) + 1;
+                const job       = jobs[i];
+                const attempts  = (job.attempts || 0) + 1;
                 const newStatus = attempts >= 3 ? 'failed' : 'pending';
                 await supabase
                     .from('scheduled_jobs')
                     .update({
                         status:        newStatus,
                         error_message: r.reason?.message || 'Unknown error',
-                        // Retry in 30 min if not final failure
                         ...(newStatus === 'pending' && {
                             scheduled_for: new Date(Date.now() + 30 * 60 * 1000).toISOString()
                         })

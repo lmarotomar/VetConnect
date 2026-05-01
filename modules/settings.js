@@ -220,9 +220,9 @@ const Settings = {
         const integrations = [
             {
                 id:    'whatsapp',
-                name:  'WhatsApp Business (Twilio)',
+                name:  'WhatsApp Business (Meta)',
                 icon:  '📱',
-                active: !!(org.twilio_sid && org.twilio_auth_token && org.twilio_phone)
+                active: true
             },
             {
                 id:    'email',
@@ -267,32 +267,18 @@ const Settings = {
         let title, content;
 
         if (id === 'whatsapp') {
-            title = '📱 WhatsApp Business (Twilio)';
+            title = '📱 WhatsApp Business (Meta)';
             content = `
-          <p class="text-muted" style="font-size:0.875rem;margin-bottom:1.5rem;">
-            Necesitas una cuenta Twilio con WhatsApp Business habilitado.
-          </p>
-          <div class="form-group">
-            <label class="form-label">Account SID</label>
-            <input type="text" class="form-input" id="int_twilio_sid"
-              value="${org.twilio_sid || ''}" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+          <div style="background:var(--bg-glass);padding:1rem;border-radius:var(--radius-md);margin-bottom:1.5rem;">
+            <div style="color:var(--brand-green, #22c55e);font-weight:600;margin-bottom:0.25rem;">✅ Integración activa</div>
+            <div style="color:var(--text-muted);font-size:0.875rem;">
+              Los mensajes de WhatsApp se envían vía Meta Cloud API usando plantillas aprobadas.
+              No se requiere configuración adicional.
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Auth Token</label>
-            <input type="password" class="form-input" id="int_twilio_token"
-              value="${org.twilio_auth_token ? '••••••••••••••••' : ''}" placeholder="Tu Auth Token de Twilio">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Número WhatsApp (formato E.164)</label>
-            <input type="tel" class="form-input" id="int_twilio_phone"
-              value="${org.twilio_phone || ''}" placeholder="+15550000000">
-          </div>
-          <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
-            <button class="btn btn-primary" style="flex:1;" onclick="Settings.saveIntegration('whatsapp')">
-              💾 Guardar
-            </button>
+          <div style="display:flex;gap:0.75rem;margin-top:1rem;">
             <button class="btn btn-secondary" id="btnTestWA" onclick="Settings.testWhatsApp()">
-              🧪 Probar
+              🧪 Probar conexión
             </button>
             <button class="btn btn-secondary" onclick="App.closeModal()">Cancelar</button>
           </div>
@@ -337,13 +323,9 @@ const Settings = {
         let updates = {};
 
         if (id === 'whatsapp') {
-            const sid   = document.getElementById('int_twilio_sid').value.trim();
-            const token = document.getElementById('int_twilio_token').value.trim();
-            const phone = document.getElementById('int_twilio_phone').value.trim();
-            if (!sid || !phone) { App.showNotification('Error', 'SID y teléfono son obligatorios', 'error'); return; }
-            updates = { twilio_sid: sid, twilio_phone: phone };
-            // Only update token if it was changed (not placeholder)
-            if (token && !token.startsWith('•')) updates.twilio_auth_token = token;
+            // WhatsApp vía Meta Cloud API — no requiere credenciales de la clínica
+            App.showNotification('Info', 'WhatsApp está configurado y activo vía Meta Cloud API', 'success');
+            return;
         }
 
         if (id === 'email') {

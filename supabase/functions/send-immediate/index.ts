@@ -1,117 +1,139 @@
 // VetConnect — Supabase Edge Function: send-immediate
-// Sends WhatsApp messages via VetPrompt (n8n webhook) using Meta Cloud API.
+// Sends WhatsApp template messages via Meta Cloud API directly.
 // Supports: appointment_confirmation, reminder_24h, reminder_2h, follow_up, test.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const SUPABASE_URL         = Deno.env.get('SUPABASE_URL')!;
-const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const SUPABASE_ANON_KEY    = Deno.env.get('SUPABASE_ANON_KEY')!;
-const VETPROMPT_WEBHOOK_URL    = Deno.env.get('VETPROMPT_WEBHOOK_URL')!;    // https://tu-n8n.app.n8n.cloud/webhook/vetconnect-send
-const VETPROMPT_WEBHOOK_SECRET = Deno.env.get('VETPROMPT_WEBHOOK_SECRET')!; // shared secret
+const SUPABASE_URL          = Deno.env.get('SUPABASE_URL')!;
+const SUPABASE_SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const SUPABASE_ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!;
+const META_WHATSAPP_TOKEN   = Deno.env.get('META_WHATSAPP_TOKEN')!;
+const META_PHONE_NUMBER_ID  = Deno.env.get('META_PHONE_NUMBER_ID')!; // 1123110644209986
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-// ─── SEND VIA VETPROMPT ───────────────────────────────────────────────────────
+// ─── TYPES ────────────────────────────────────────────────────────────────────
 
-async function sendViaVetPrompt(
-    to: string,
-    message: string,
-    type: string
+interface NamedParam {
+    name:  string;
+    value: string;
+}
+
+interface TemplatePayload {
+    templateName: string;
+    params:       NamedParam[];
+}
+
+// ─── SEND TEMPLATE VIA META CLOUD API ────────────────────────────────────────
+
+async function sendTemplate(
+    to:           string,
+    templateName: string,
+    params:       NamedParam[]
 ): Promise<{ success: true; messageId: string }> {
-    const res = await fetch(VETPROMPT_WEBHOOK_URL, {
-        method:  'POST',
-        headers: {
-            'Content-Type':        'application/json',
-            'x-vetconnect-secret': VETPROMPT_WEBHOOK_SECRET
-        },
-        body: JSON.stringify({ to, message, type })
-    });
+    const res = await fetch(
+        `https://graph.facebook.com/v25.0/${META_PHONE_NUMBER_ID}/messages`,
+        {
+            method:  'POST',
+            headers: {
+                'Content-Type':  'application/json',
+                'Authorization': `Bearer ${META_WHATSAPP_TOKEN}`
+            },
+            body: JSON.stringify({
+                messaging_product: 'whatsapp',
+                to,
+                type: 'template',
+                template: {
+                    name:     templateName,
+                    language: { code: 'es' },
+                    components: [{
+                        type:       'body',
+                        parameters: params.map(p => ({
+                            type:           'text',
+                            text:           p.value,
+                            parameter_name: p.name
+                        }))
+                    }]
+                }
+            })
+        }
+    );
 
     const data = await res.json() as any;
     if (!res.ok || data.error) {
-        throw new Error(data.error || `VetPrompt webhook responded ${res.status}`);
+        throw new Error(data.error?.message || `Meta API responded ${res.status}`);
     }
-    return { success: true, messageId: data.messageId };
+    return { success: true, messageId: data.messages?.[0]?.id };
 }
 
-// ─── MESSAGE BUILDERS ─────────────────────────────────────────────────────────
+// ─── TEMPLATE BUILDERS ───────────────────────────────────────────────────────
 
-function buildMessage(type: string, appt: any, clinicName: string): string {
-    const clientName = appt?.client?.name || 'Cliente';
-    const petName    = appt?.patient?.name || 'tu mascota';
-    const date       = appt?.appointment_date || appt?.date || '';
-    const time       = appt?.appointment_time || appt?.time || '';
+function buildTemplatePayload(
+    type:       string,
+    appt:       any,
+    clinicName: string
+): TemplatePayload {
+    const clientName = appt?.client?.name       || 'Cliente';
+    const petName    = appt?.patient?.name      || 'tu mascota';
+    const date       = appt?.appointment_date   || appt?.date || '';
+    const time       = appt?.appointment_time   || appt?.time || '';
 
     switch (type) {
         case 'appointment_confirmation':
         case 'confirmation':
-            return [
-                `Hola ${clientName} 👋`,
-                '',
-                'Tu cita ha sido confirmada ✅',
-                '',
-                `📅 Fecha: ${date}`,
-                `⏰ Hora: ${time}`,
-                `🐾 Mascota: ${petName}`,
-                '',
-                'Te esperamos. Si necesitas cambiar la cita, responde a este mensaje.',
-                '',
-                `— ${clinicName}`
-            ].join('\n');
+            return {
+                templateName: 'vetconnect_confirmacion_cita',
+                params: [
+                    { name: 'cliente_nombre', value: clientName },
+                    { name: 'cita_fecha',     value: date       },
+                    { name: 'cita_hora',      value: time       },
+                    { name: 'mascota_nombre', value: petName    },
+                    { name: 'clinica_nombre', value: clinicName }
+                ]
+            };
 
         case 'reminder_24h':
-            return [
-                `Recordatorio de cita ⏰`,
-                '',
-                `Hola ${clientName}, te recordamos tu cita *mañana*:`,
-                `📅 ${date} a las ${time}`,
-                `🐾 ${petName}`,
-                '',
-                'Por favor responde:',
-                '1. ¿Cuál es el motivo principal de la consulta?',
-                '2. ¿Ha presentado algún síntoma?',
-                '3. ¿Come y bebe con normalidad?',
-                '',
-                'Tus respuestas nos ayudan a preparar mejor la consulta.',
-                `— ${clinicName}`
-            ].join('\n');
+            return {
+                templateName: 'vetconnect_recordatorio_24h',
+                params: [
+                    { name: 'cliente_nombre', value: clientName },
+                    { name: 'cita_fecha',     value: date       },
+                    { name: 'cita_hora',      value: time       },
+                    { name: 'mascota_nombre', value: petName    },
+                    { name: 'clinica_nombre', value: clinicName }
+                ]
+            };
 
         case 'reminder_2h':
-            return [
-                `⏰ Tu cita es en 2 horas`,
-                '',
-                `${clientName}, te esperamos hoy a las *${time}* para la consulta de ${petName}.`,
-                '',
-                `¡Nos vemos pronto! 🐾`,
-                `— ${clinicName}`
-            ].join('\n');
+            return {
+                templateName: 'vetconnect_recordatorio_2h',
+                params: [
+                    { name: 'cita_hora',      value: time       },
+                    { name: 'mascota_nombre', value: petName    },
+                    { name: 'cliente_nombre', value: clientName },
+                    { name: 'clinica_nombre', value: clinicName }
+                ]
+            };
 
         case 'follow_up':
-            return [
-                `Seguimiento de ${petName} 🔄`,
-                '',
-                `Hola ${clientName}, ¿cómo ha evolucionado ${petName} después de la consulta?`,
-                '',
-                'Cuéntanos:',
-                '• ¿Ha mejorado su condición?',
-                '• ¿Alguna duda sobre el tratamiento?',
-                '',
-                'Estamos para ayudarte 🐾',
-                `— ${clinicName}`
-            ].join('\n');
+            return {
+                templateName: 'vetconnect_seguimiento',
+                params: [
+                    { name: 'mascota_nombre', value: petName    },
+                    { name: 'cita_fecha',     value: date       },
+                    { name: 'cliente_nombre', value: clientName },
+                    { name: 'clinica_nombre', value: clinicName }
+                ]
+            };
 
         case 'test':
-            return [
-                `✅ Prueba de conexión VetConnect`,
-                '',
-                'La integración de WhatsApp está funcionando correctamente.',
-                '',
-                `— ${clinicName}`
-            ].join('\n');
+            return {
+                templateName: 'vetprompt_bienvenida',
+                params: [{ name: 'name', value: 'Test VetConnect' }]
+            };
 
         default:
-            return `Mensaje de ${clinicName}`;
+            throw new Error(`Unknown message type: ${type}`);
     }
 }
 
@@ -157,7 +179,7 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Organization not found' }), { status: 404 });
     }
 
-    // Determine recipient — test messages go to the configured test number
+    // Determine recipient
     const recipientPhone = type === 'test'
         ? (Deno.env.get('VETCONNECT_TEST_PHONE') || body.testPhone)
         : appointment?.client?.phone;
@@ -169,10 +191,16 @@ Deno.serve(async (req) => {
         );
     }
 
-    const messageText = buildMessage(type, appointment || {}, org.name);
+    let payload: TemplatePayload;
+    try {
+        payload = buildTemplatePayload(type, appointment || {}, org.name);
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        return new Response(JSON.stringify({ error: message }), { status: 400 });
+    }
 
     try {
-        const result = await sendViaVetPrompt(recipientPhone, messageText, type);
+        const result = await sendTemplate(recipientPhone, payload.templateName, payload.params);
 
         // Log communication (skip for test)
         if (type !== 'test' && appointment?.client?.id) {
@@ -181,7 +209,7 @@ Deno.serve(async (req) => {
                 organization_id,
                 channel:         'whatsapp',
                 type,
-                content:         messageText,
+                content:         payload.templateName,
                 status:          'sent',
                 sent_at:         new Date().toISOString(),
                 external_id:     result.messageId
@@ -193,8 +221,9 @@ Deno.serve(async (req) => {
             headers: { 'Content-Type': 'application/json' }
         });
 
-    } catch (err: any) {
-        console.error('sendViaVetPrompt error:', err.message);
-        return new Response(JSON.stringify({ error: err.message }), { status: 502 });
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        console.error('sendTemplate error:', message);
+        return new Response(JSON.stringify({ error: message }), { status: 502 });
     }
 });
